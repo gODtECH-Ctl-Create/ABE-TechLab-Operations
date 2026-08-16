@@ -21,12 +21,13 @@ h1 { margin: 7px 0 0; font-size: 30px; letter-spacing: -.035em; }
 .metric-value { margin-top: 8px; font-size: 28px; font-weight: 700; letter-spacing: -.03em; }
 .metric-note { margin-top: 5px; color: #8a9098; font-size: 12px; }
 .grid { display: grid; grid-template-columns: 1.2fr .8fr; gap: 16px; margin-top: 16px; }
-.card h2 { margin: 0 0 16px; font-size: 16px; }
+.card h2 { margin: 0; font-size: 16px; }
+.section-heading { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; margin-bottom: 16px; }
 .list { display: grid; gap: 10px; }
 .row { display: flex; justify-content: space-between; gap: 18px; padding: 13px 0; border-top: 1px solid #eceef0; }
 .row:first-child { border-top: 0; padding-top: 0; }
 .row strong { display: block; font-size: 14px; }
-.row small { display: block; margin-top: 4px; color: #858a92; }
+.row small { display: block; margin-top: 4px; color: #858a92; line-height: 1.45; }
 .badge { align-self: flex-start; border: 1px solid #e0e3e6; border-radius: 999px; padding: 5px 9px; font-size: 11px; color: #626770; white-space: nowrap; }
 .aria { background: #151719; color: #fff; }
 .aria .eyebrow { color: #9ea4ad; }
