@@ -35,7 +35,10 @@ export function decideFollowUp(
 
   const sentAt = new Date(lastSent.occurredAt);
   const daysSinceSend = (now.getTime() - sentAt.getTime()) / 86_400_000;
-  const nextStage = sequence.find((step) => step.stage !== "first_touch" && step.delayDays <= daysSinceSend);
+  const nextStage = sequence.find(
+    (step): step is Extract<SequenceStep, { stage: "follow_up_1" | "follow_up_2" }> =>
+      step.stage !== "first_touch" && step.delayDays <= daysSinceSend,
+  );
 
   if (!nextStage) {
     return { eligible: false, reason: "No follow-up step is due yet." };
