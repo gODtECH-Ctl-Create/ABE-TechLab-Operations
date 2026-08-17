@@ -9,26 +9,27 @@ export const PROVIDERS: ProviderConfig[] = [
   { name: "grok", label: "Grok", keyEnv: "GROK_API_KEY", modelEnv: "GROK_MODEL", defaultModel: "grok-4-fast-non-reasoning", baseUrl: "https://api.x.ai/v1" },
   { name: "openrouter", label: "OpenRouter", keyEnv: "OPENROUTER_API_KEY", modelEnv: "OPENROUTER_MODEL", defaultModel: "meta-llama/llama-3.3-8b-instruct:free", baseUrl: "https://openrouter.ai/api/v1" },
   { name: "cerebras", label: "Cerebras", keyEnv: "CEREBRAS_API_KEY", modelEnv: "CEREBRAS_MODEL", defaultModel: "llama-3.3-70b", baseUrl: "https://api.cerebras.ai/v1" },
-  { name: "agentrouter", label: "AgentRouter", keyEnv: "AGENTIC_API_KEY", modelEnv: "AGENTROUTER_MODEL", defaultModel: "deepseek-v4-flash", baseUrl: "https://api.agentrouter.to/api/agentic-api" },
+  { name: "agentrouter", label: "AgentRouter", keyEnv: "AGENT_ROUTER_API_KEY", modelEnv: "AGENTROUTER_MODEL", defaultModel: "deepseek-v4-flash", baseUrl: "https://api.agentrouter.to/api/agentic-api" },
   { name: "openai", label: "OpenAI", keyEnv: "OPENAI_API_KEY", modelEnv: "OPENAI_MODEL", defaultModel: "gpt-5.4-mini", baseUrl: "https://api.openai.com/v1" },
 ];
-const configured = (c: ProviderConfig) => Boolean(process.env[c.keyEnv]);
+const envKeyFor = (config: ProviderConfig) => config.name === "agentrouter" ? (process.env.AGENT_ROUTER_API_KEY || process.env.AGENTIC_API_KEY) : process.env[config.keyEnv];
+const configured = (c: ProviderConfig) => Boolean(envKeyFor(c));
 const modelFor = (c: ProviderConfig) => process.env[c.modelEnv] || c.defaultModel;
 const usageTable = (client: any) => client.from("ai_provider_usage");
 
 async function callOpenAiCompatible(config: ProviderConfig, prompt: string) {
-  const response = await fetch(`${config.baseUrl}/chat/completions`, { method: "POST", headers: { Authorization: `Bearer ${process.env[config.keyEnv]}`, "Content-Type": "application/json" }, body: JSON.stringify({ model: modelFor(config), messages: [{ role: "user", content: prompt }], temperature: 0.2 }) });
+  const response = await fetch(`${config.baseUrl}/chat/completions`, { method: "POST", headers: { Authorization: `Bearer ${envKeyFor(config)}`, "Content-Type": "application/json" }, body: JSON.stringify({ model: modelFor(config), messages: [{ role: "user", content: prompt }], temperature: 0.2 }) });
   const raw = await response.text(); if (!response.ok) throw new Error(`${config.label} returned ${response.status}: ${raw.slice(0, 500)}`); const data = JSON.parse(raw);
   return { text: data?.choices?.[0]?.message?.content ?? "", usage: { inputTokens: data?.usage?.prompt_tokens, outputTokens: data?.usage?.completion_tokens } };
 }
 async function callGemini(config: ProviderConfig, prompt: string) {
-  const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${modelFor(config)}:generateContent?key=${process.env[config.keyEnv]}`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ contents: [{ role: "user", parts: [{ text: prompt }] }], tools: [{ google_search: {} }] }) });
+  const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${modelFor(config)}:generateContent?key=${envKeyFor(config)}`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ contents: [{ role: "user", parts: [{ text: prompt }] }], tools: [{ google_search: {} }] }) });
   const raw = await response.text(); if (!response.ok) throw new Error(`${config.label} returned ${response.status}: ${raw.slice(0, 500)}`); const data = JSON.parse(raw);
   const text = (data?.candidates?.[0]?.content?.parts ?? []).map((part: { text?: string }) => part.text).filter(Boolean).join("\n");
   return { text, usage: { inputTokens: data?.usageMetadata?.promptTokenCount, outputTokens: data?.usageMetadata?.candidatesTokenCount } };
 }
 async function callAgentRouter(config: ProviderConfig, prompt: string) {
-  const response = await fetch(`${config.baseUrl}/domains/models/capabilities/chat-complete/execute`, { method: "POST", headers: { Authorization: `Bearer ${process.env[config.keyEnv]}`, "Content-Type": "application/json" }, body: JSON.stringify({ model: modelFor(config), messages: [{ role: "user", content: prompt }], allowFallback: true }) });
+  const response = await fetch(`${config.baseUrl}/domains/models/capabilities/chat-complete/execute`, { method: "POST", headers: { Authorization: `Bearer ${envKeyFor(config)}`, "Content-Type": "application/json" }, body: JSON.stringify({ model: modelFor(config), messages: [{ role: "user", content: prompt }], allowFallback: true }) });
   const raw = await response.text(); if (!response.ok) throw new Error(`${config.label} returned ${response.status}: ${raw.slice(0, 500)}`); const data = JSON.parse(raw);
   return { text: data?.completionText ?? data?.text ?? data?.choices?.[0]?.message?.content ?? "", usage: { inputTokens: data?.usage?.inputTokens, outputTokens: data?.usage?.outputTokens } };
 }
@@ -47,8 +48,8 @@ export async function generateWithFailover(prompt: string, task = "general", req
 export function getProviderHealth() { return PROVIDERS.map((config, index) => ({ name: config.name, label: config.label, priority: index + 1, configured: configured(config), model: modelFor(config), keyEnv: config.keyEnv })); }
 
 export async function getAgentRouterWallet() {
-  const key = process.env.AGENTIC_API_KEY; if (!key) return { configured: false, balanceCredits: null, balanceUsd: null, usage: [] as unknown[] };
-  const base = process.env.AGENTIC_API_BASE_URL || "https://api.agentrouter.to/api/agentic-api"; const headers = { Authorization: `Bearer ${key}` };
+  const key = process.env.AGENT_ROUTER_API_KEY || process.env.AGENTIC_API_KEY; if (!key) return { configured: false, balanceCredits: null, balanceUsd: null, usage: [] as unknown[] };
+  const base = process.env.AGENT_ROUTER_API_BASE_URL || process.env.AGENTIC_API_BASE_URL || "https://api.agentrouter.to/api/agentic-api"; const headers = { Authorization: `Bearer ${key}` };
   const [walletResponse, usageResponse] = await Promise.all([fetch(`${base}/wallet`, { headers }), fetch(`${base}/usage?limit=20`, { headers })]);
   const wallet = walletResponse.ok ? await walletResponse.json() : null; const usage = usageResponse.ok ? await usageResponse.json() : [];
   const credits = typeof wallet?.balanceCredits === "number" ? wallet.balanceCredits : typeof wallet?.balance === "number" ? wallet.balance : null;
