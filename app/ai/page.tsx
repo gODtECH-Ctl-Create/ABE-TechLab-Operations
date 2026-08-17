@@ -10,7 +10,8 @@ export default async function AiControlCentre() {
   const role = roleResult.error ? null : String(roleResult.data ?? "");
   if (!["admin", "operator", "reviewer"].includes(role)) redirect("/");
 
-  const providers = await getAiProviderDashboard();
+  const dashboard = await getAiProviderDashboard();
+  const { providers, agentRouter } = dashboard;
   const configured = providers.filter((p) => p.configured).length;
   const failures = providers.reduce((sum, p) => sum + p.failures24h, 0);
   const requests = providers.reduce((sum, p) => sum + p.requests24h, 0);
@@ -18,14 +19,15 @@ export default async function AiControlCentre() {
   return (
     <main className="dashboard-shell">
       <header className="page-header">
-        <div><div className="eyebrow">Intelligence</div><h1>AI Control Centre</h1><p>Monitor provider availability, failover activity, and recent usage.</p></div>
+        <div><div className="eyebrow">Intelligence</div><h1>AI Control Centre</h1><p>Monitor provider availability, failover activity, usage, and AgentRouter credits.</p></div>
         <a className="secondary-button" href="/">Back to operations</a>
       </header>
 
       <section className="metric-grid">
-        <div className="metric-card"><span>Configured providers</span><strong>{configured}/6</strong><small>Optional keys are safe to leave empty.</small></div>
+        <div className="metric-card"><span>Configured providers</span><strong>{configured}/6</strong><small>Optional keys can safely remain empty.</small></div>
         <div className="metric-card"><span>Requests, 24h</span><strong>{requests}</strong><small>Across the provider pool.</small></div>
-        <div className="metric-card"><span>Failures, 24h</span><strong>{failures}</strong><small>Failures trigger the next provider when available.</small></div>
+        <div className="metric-card"><span>Failures, 24h</span><strong>{failures}</strong><small>Failed providers are skipped and the next configured provider is tried.</small></div>
+        <div className="metric-card"><span>AgentRouter wallet</span><strong>{agentRouter.balanceUsd == null ? "Not configured" : `$${agentRouter.balanceUsd.toFixed(2)}`}</strong><small>{agentRouter.balanceCredits == null ? "Add AGENTIC_API_KEY to enable wallet monitoring." : `${agentRouter.balanceCredits.toLocaleString()} credits remaining`}</small></div>
       </section>
 
       <section className="table-card">
@@ -44,9 +46,10 @@ export default async function AiControlCentre() {
       </section>
 
       <section className="table-card">
-        <div className="section-heading"><div><div className="eyebrow">Operations</div><h2>How failover works</h2></div></div>
+        <div className="section-heading"><div><div className="eyebrow">Operations</div><h2>Provider rules</h2></div></div>
         <div className="callout"><strong>Empty keys do not break ARIA.</strong><p>A provider is skipped when its server-side key is absent. ARIA attempts only configured providers in priority order. OpenAI remains the final fallback.</p></div>
         <div className="callout"><strong>Usage is tracked.</strong><p>Every attempt records provider, task, result, duration, token usage where supplied, and errors in the AI provider usage ledger.</p></div>
+        {agentRouter.error && <div className="callout"><strong>AgentRouter warning</strong><p>{agentRouter.error}</p></div>}
       </section>
     </main>
   );
