@@ -1,7 +1,6 @@
 import { createSupabaseServerClient } from "../supabase/server";
 
 type ProviderName = "gemini" | "grok" | "openrouter" | "cerebras" | "agentrouter" | "openai";
-
 type ProviderConfig = { name: ProviderName; label: string; keyEnv: string; modelEnv: string; defaultModel: string; baseUrl?: string };
 export type AiRouterResult = { text: string; provider: ProviderName; model: string; fallbackUsed: boolean; attempted: ProviderName[]; usage?: { inputTokens?: number; outputTokens?: number } };
 
@@ -70,15 +69,28 @@ export async function generateWithFailover(prompt: string, task = "general", req
 
 export function getProviderHealth() { return PROVIDERS.map((config, index) => ({ name: config.name, label: config.label, priority: index + 1, configured: configured(config), model: modelFor(config), keyEnv: config.keyEnv })); }
 
+export async function getAgentRouterWallet() {
+  const key = process.env.AGENTIC_API_KEY;
+  if (!key) return { configured: false, balanceCredits: null, balanceUsd: null, usage: [] as unknown[] };
+  const base = process.env.AGENTIC_API_BASE_URL || "https://api.agentrouter.to/api/agentic-api";
+  const headers = { Authorization: `Bearer ${key}` };
+  const [walletResponse, usageResponse] = await Promise.all([fetch(`${base}/wallet`, { headers }), fetch(`${base}/usage?limit=20`, { headers })]);
+  const wallet = walletResponse.ok ? await walletResponse.json() : null;
+  const usage = usageResponse.ok ? await usageResponse.json() : [];
+  const credits = typeof wallet?.balanceCredits === "number" ? wallet.balanceCredits : typeof wallet?.balance === "number" ? wallet.balance : null;
+  return { configured: true, balanceCredits: credits, balanceUsd: credits == null ? null : credits / 1000, usage: Array.isArray(usage) ? usage : usage?.items ?? [], error: !walletResponse.ok ? `Wallet request returned ${walletResponse.status}` : null };
+}
+
 export async function getAiProviderDashboard() {
   const health = getProviderHealth();
   const supabase = await createSupabaseServerClient();
   const { data: usage } = await supabase.from("ai_provider_usage").select("provider,status,input_tokens,output_tokens,duration_ms,error_message,created_at").order("created_at", { ascending: false }).limit(200);
   const since = Date.now() - 24 * 60 * 60 * 1000;
   const recent = (usage ?? []).filter((item) => new Date(item.created_at).getTime() >= since);
-  return health.map((provider) => {
+  const providerStats = health.map((provider) => {
     const rows = recent.filter((item) => item.provider === provider.name);
     const failures = rows.filter((item) => item.status === "failed").length;
     return { ...provider, requests24h: rows.length, successes24h: rows.filter((item) => item.status === "success").length, failures24h: failures, failureRate24h: rows.length ? Math.round((failures / rows.length) * 100) : 0, inputTokens24h: rows.reduce((sum, row) => sum + (row.input_tokens ?? 0), 0), outputTokens24h: rows.reduce((sum, row) => sum + (row.output_tokens ?? 0), 0), lastRequestAt: rows[0]?.created_at ?? null };
   });
+  return { providers: providerStats, agentRouter: await getAgentRouterWallet() };
 }
