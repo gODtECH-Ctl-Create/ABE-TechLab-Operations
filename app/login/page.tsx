@@ -1,12 +1,15 @@
 "use client";
 
 import { FormEvent, useState } from "react";
+import Link from "next/link";
+import { useSearchParams } from "next/navigation";
 import { createSupabaseBrowserClient } from "@/lib/supabase/client";
 
 export default function LoginPage() {
+  const searchParams = useSearchParams();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [error, setError] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(searchParams.get("error") === "confirmation" ? "Your confirmation link could not be completed. Please try again or request a new account." : null);
   const [busy, setBusy] = useState(false);
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
@@ -44,6 +47,11 @@ export default function LoginPage() {
           {error ? <div className="auth-error" role="alert">{error}</div> : null}
           <button type="submit" disabled={busy}>{busy ? "Signing in…" : "Sign in"}</button>
         </form>
+        <div className="auth-links">
+          <Link href="/signup">Create an account</Link>
+          <span>·</span>
+          <Link href="/reset-password">Forgot password?</Link>
+        </div>
       </section>
     </main>
   );
