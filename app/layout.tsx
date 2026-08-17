@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import "./globals.css";
+import "./prospecting/research.css";
 
 export const metadata: Metadata = {
   title: "ABE TechLab Operations",
