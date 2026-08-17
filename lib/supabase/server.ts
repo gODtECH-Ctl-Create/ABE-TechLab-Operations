@@ -1,16 +1,12 @@
 import { createServerClient } from "@supabase/ssr";
 import { cookies } from "next/headers";
 import type { Database } from "../data/supabase/database.types";
+import { SUPABASE_PUBLISHABLE_KEY, SUPABASE_URL } from "./config";
 
 export async function createSupabaseServerClient() {
   const cookieStore = await cookies();
-  const url = process.env.SUPABASE_URL;
-  const key = process.env.SUPABASE_PUBLISHABLE_KEY;
 
-  if (!url) throw new Error("SUPABASE_URL is not configured");
-  if (!key) throw new Error("SUPABASE_PUBLISHABLE_KEY is not configured");
-
-  return createServerClient<Database>(url, key, {
+  return createServerClient<Database>(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY, {
     cookies: {
       getAll() {
         return cookieStore.getAll();
