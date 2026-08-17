@@ -1,0 +1,53 @@
+import { redirect } from "next/navigation";
+import { createSupabaseServerClient } from "@/lib/supabase/server";
+import { getAiProviderDashboard } from "@/lib/ai/provider-router";
+
+export default async function AiControlCentre() {
+  const supabase = await createSupabaseServerClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) redirect("/login");
+  const roleResult = await supabase.rpc("get_my_role" as never);
+  const role = roleResult.error ? null : String(roleResult.data ?? "");
+  if (!["admin", "operator", "reviewer"].includes(role)) redirect("/");
+
+  const providers = await getAiProviderDashboard();
+  const configured = providers.filter((p) => p.configured).length;
+  const failures = providers.reduce((sum, p) => sum + p.failures24h, 0);
+  const requests = providers.reduce((sum, p) => sum + p.requests24h, 0);
+
+  return (
+    <main className="dashboard-shell">
+      <header className="page-header">
+        <div><div className="eyebrow">Intelligence</div><h1>AI Control Centre</h1><p>Monitor provider availability, failover activity, and recent usage.</p></div>
+        <a className="secondary-button" href="/">Back to operations</a>
+      </header>
+
+      <section className="metric-grid">
+        <div className="metric-card"><span>Configured providers</span><strong>{configured}/6</strong><small>Optional keys are safe to leave empty.</small></div>
+        <div className="metric-card"><span>Requests, 24h</span><strong>{requests}</strong><small>Across the provider pool.</small></div>
+        <div className="metric-card"><span>Failures, 24h</span><strong>{failures}</strong><small>Failures trigger the next provider when available.</small></div>
+      </section>
+
+      <section className="table-card">
+        <div className="section-heading"><div><div className="eyebrow">Provider pool</div><h2>Failover order</h2></div><span className="muted">1 → 6</span></div>
+        <div className="provider-list">
+          {providers.map((provider) => (
+            <div className="provider-row" key={provider.name}>
+              <div className="provider-rank">{provider.priority}</div>
+              <div className="provider-main"><strong>{provider.label}</strong><span>{provider.model}</span></div>
+              <div className={`status-pill ${provider.configured ? "status-good" : "status-muted"}`}>{provider.configured ? "Configured" : "Not configured"}</div>
+              <div className="provider-stat"><strong>{provider.requests24h}</strong><span>requests</span></div>
+              <div className="provider-stat"><strong>{provider.failureRate24h}%</strong><span>failure rate</span></div>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      <section className="table-card">
+        <div className="section-heading"><div><div className="eyebrow">Operations</div><h2>How failover works</h2></div></div>
+        <div className="callout"><strong>Empty keys do not break ARIA.</strong><p>A provider is skipped when its server-side key is absent. ARIA attempts only configured providers in priority order. OpenAI remains the final fallback.</p></div>
+        <div className="callout"><strong>Usage is tracked.</strong><p>Every attempt records provider, task, result, duration, token usage where supplied, and errors in the AI provider usage ledger.</p></div>
+      </section>
+    </main>
+  );
+}
