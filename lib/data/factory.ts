@@ -1,8 +1,10 @@
 import type { OperationsRepositories } from "./repository";
 import { createInMemoryRepositories } from "./in-memory";
+import { createSupabaseRepositories } from "./supabase";
 
-export function createOperationsRepositories(): OperationsRepositories {
-  // Keep the application independent from a live Supabase project during development.
-  // The Supabase implementation will replace this adapter once the dedicated project exists.
-  return createInMemoryRepositories();
+type SupabaseClient = Parameters<typeof createSupabaseRepositories>[0];
+
+export function createOperationsRepositories(client?: SupabaseClient): OperationsRepositories {
+  // Development stays database-free until the dedicated Supabase project exists.
+  return client ? createSupabaseRepositories(client) : createInMemoryRepositories();
 }
