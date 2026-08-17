@@ -38,6 +38,38 @@ export async function createResearchRequest(formData: FormData) {
   };
   await supabase.from("audit_events").insert(auditPayload as never);
 
+  // Start the real research worker immediately. The worker is authenticated with
+  // the same user's access token and performs web research, evidence capture,
+  // qualification, lead creation and audit logging.
+  const { data: sessionData } = await supabase.auth.getSession();
+  const accessToken = sessionData.session?.access_token;
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  if (!accessToken || !supabaseUrl) {
+    await supabase.from("research_requests").update({
+      status: "failed",
+      error_message: "Research worker configuration is unavailable.",
+    } as never).eq("id", requestId);
+    redirect("/prospecting?error=worker_configuration");
+  }
+
+  const workerResponse = await fetch(`${supabaseUrl}/functions/v1/research-prospects`, {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${accessToken}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({ requestId }),
+  });
+
+  if (!workerResponse.ok) {
+    const workerBody = await workerResponse.text().catch(() => "");
+    await supabase.from("research_requests").update({
+      status: "failed",
+      error_message: workerBody.slice(0, 1000) || `Research worker returned ${workerResponse.status}`,
+    } as never).eq("id", requestId);
+    redirect(`/prospecting?error=${encodeURIComponent("research_worker_failed")}`);
+  }
+
   revalidatePath("/prospecting");
   revalidatePath("/");
   redirect(`/prospecting?created=${requestId}`);
