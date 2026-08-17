@@ -8,11 +8,17 @@ export async function persistProspect(
 ) {
   return repositories.prospects.create({
     id: prospect.id,
-    organisationName: prospect.organisationName,
-    recommendedService: prospect.recommendedService,
-    likelyNeed: prospect.likelyNeed,
-    decisionMakerRole: prospect.decisionMakerRole,
+    organisation_name: prospect.organisationName,
+    website_url: prospect.website,
+    industry: prospect.industry,
+    geography: prospect.geography,
+    likely_need: prospect.likelyNeed,
+    recommended_service: prospect.recommendedService,
     confidence: prospect.confidence,
+    evidence: prospect.evidence,
+    status: prospect.status,
+    created_at: prospect.createdAt,
+    updated_at: prospect.updatedAt,
   });
 }
 
@@ -21,7 +27,9 @@ export async function createAndPersistOutreachStrategy(
   prospect: Prospect,
 ) {
   const strategy = createBaselineOutreachStrategy(prospect);
-  const result = await repositories.outreachStrategies.create(strategy as unknown as Record<string, unknown>);
+  const result = await repositories.outreachStrategies.create(
+    strategy as unknown as Record<string, unknown>,
+  );
   return { strategy, persistence: result };
 }
 
