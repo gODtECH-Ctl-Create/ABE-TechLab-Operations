@@ -58,6 +58,10 @@ Autonomous actions will be introduced gradually. High-impact external actions re
 - Scheduled jobs
 - Analytics and reporting
 
+## Deployment
+
+The production deployment is managed through Vercel from the `main` branch. Build/type-check failures must be resolved before production changes are considered live.
+
 ## Security
 
 This repository is private. Secrets must never be committed to GitHub. Production credentials belong in the hosting provider's encrypted environment variables or an approved secrets manager.
