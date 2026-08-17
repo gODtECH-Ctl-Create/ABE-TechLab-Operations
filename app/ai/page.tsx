@@ -28,7 +28,7 @@ export default async function AiControlCentre() {
         <div className="metric-card"><span>Configured providers</span><strong>{configured}/6</strong><small>Optional keys can safely remain empty.</small></div>
         <div className="metric-card"><span>Requests, 24h</span><strong>{requests}</strong><small>Across the provider pool.</small></div>
         <div className="metric-card"><span>Failures, 24h</span><strong>{failures}</strong><small>Failed providers are skipped and the next configured provider is tried.</small></div>
-        <div className="metric-card"><span>AgentRouter wallet</span><strong>{agentRouter.balanceUsd == null ? "Not configured" : `$${agentRouter.balanceUsd.toFixed(2)}`}</strong><small>{agentRouter.balanceCredits == null ? "Add AGENTIC_API_KEY to enable wallet monitoring." : `${agentRouter.balanceCredits.toLocaleString()} credits remaining`}</small></div>
+        <div className="metric-card"><span>AgentRouter wallet</span><strong>{agentRouter.balanceUsd == null ? "Not configured" : `$${agentRouter.balanceUsd.toFixed(2)}`}</strong><small>{agentRouter.balanceCredits == null ? "Add AGENT_ROUTER_API_KEY to enable wallet monitoring." : `${agentRouter.balanceCredits.toLocaleString()} credits remaining`}</small></div>
       </section>
 
       <section className="table-card">
