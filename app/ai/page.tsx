@@ -8,7 +8,8 @@ export default async function AiControlCentre() {
   if (!user) redirect("/login");
   const roleResult = await supabase.rpc("get_my_role" as never);
   const role = roleResult.error ? null : String(roleResult.data ?? "");
-  if (!["admin", "operator", "reviewer"].includes(role)) redirect("/");
+  const allowedRoles = ["admin", "operator", "reviewer"] as const;
+  if (role === null || !allowedRoles.includes(role as (typeof allowedRoles)[number])) redirect("/");
 
   const dashboard = await getAiProviderDashboard();
   const { providers, agentRouter } = dashboard;
