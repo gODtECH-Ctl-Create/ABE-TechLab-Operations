@@ -1,7 +1,7 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2.55.0";
+import { createClient } from "npm:@supabase/supabase-js@2.55.0";
 
-const corsHeaders = {"Access-Control-Allow-Origin":"*","Access-Control-Allow-Headers":"authorization, x-client-info, apikey, content-type","Access-Control-Allow-Methods":"POST, OPTIONS"};
+const corsHeaders={"Access-Control-Allow-Origin":"*","Access-Control-Allow-Headers":"authorization, x-client-info, apikey, content-type","Access-Control-Allow-Methods":"POST, OPTIONS"};
 type Source={url:string;title:string;snippet:string|null};
 type Item={name:string;website_url:string|null;industry:string|null;geography:string|null;likely_need:string;recommended_service:string;score:number;confidence:number;reasons:string[];sources:Source[]};
 function out(data:unknown,status=200){return new Response(JSON.stringify(data),{status,headers:{...corsHeaders,"Content-Type":"application/json"}})}
