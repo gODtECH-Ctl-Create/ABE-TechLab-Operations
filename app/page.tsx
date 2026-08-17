@@ -19,6 +19,7 @@ type Organisation = Database["public"]["Tables"]["organisations"]["Row"];
 type Lead = Database["public"]["Tables"]["leads"]["Row"];
 type Prospect = Database["public"]["Tables"]["prospects"]["Row"];
 type AuditEvent = Database["public"]["Tables"]["audit_events"]["Row"];
+type UserRole = "admin" | "operator" | "reviewer";
 
 export default async function Dashboard() {
   const supabase = await createSupabaseServerClient();
@@ -26,13 +27,15 @@ export default async function Dashboard() {
 
   if (!user) redirect("/login");
 
-  const { data: role } = await supabase
+  const { data: roleRow } = await supabase
     .from("user_roles")
     .select("role")
     .eq("user_id", user.id)
     .maybeSingle();
 
-  if (!role) {
+  const userRole = (roleRow as { role: UserRole } | null)?.role;
+
+  if (!userRole) {
     return (
       <main className="auth-shell">
         <section className="auth-card">
@@ -63,9 +66,7 @@ export default async function Dashboard() {
   const activities = (activitiesResult.data ?? []) as Pick<AuditEvent, "id" | "actor_type" | "action" | "entity_type" | "entity_id" | "metadata" | "created_at">[];
 
   const organisationById = new Map<string, (typeof organisations)[number]>();
-  for (const organisation of organisations) {
-    organisationById.set(organisation.id, organisation);
-  }
+  for (const organisation of organisations) organisationById.set(organisation.id, organisation);
 
   const highPriority = leads.filter((lead) => (lead.score ?? 0) >= 85).length;
   const activeOpportunities = leads.filter((lead) => ["qualified", "outreach_ready", "contacted", "engaged", "opportunity"].includes(lead.status)).length;
@@ -81,7 +82,7 @@ export default async function Dashboard() {
   return (
     <div className="shell">
       <aside className="sidebar">
-        <div className="brand">ABE TechLab<span>Operations · v0.1 · {role.role}</span></div>
+        <div className="brand">ABE TechLab<span>Operations · v0.1 · {userRole}</span></div>
         <nav className="nav" aria-label="Operations navigation">
           <a href="#dashboard">Dashboard</a><a href="#leads">Leads</a><a href="#opportunities">Opportunities</a><a href="#organisations">Organisations</a><a href="#research">Research</a><a href="#outreach">Outreach</a><a href="#aria">ARIA</a>
         </nav>
