@@ -27,15 +27,12 @@ export default async function Dashboard() {
 
   if (!user) redirect("/login");
 
-  const { data: roleRow } = await supabase
-    .from("user_roles")
-    .select("role")
-    .eq("user_id", user.id)
-    .maybeSingle();
+  // Authorization is resolved through a SECURITY DEFINER function scoped to auth.uid().
+  // This avoids relying on a direct user_roles table read during the SSR request.
+  const { data: roleValue, error: roleError } = await supabase.rpc("get_my_role" as never);
+  const userRole = roleError ? undefined : (roleValue as UserRole | null | undefined);
 
-  const userRole = (roleRow as { role: UserRole } | null)?.role;
-
-  if (!userRole) {
+  if (!userRole || !["admin", "operator", "reviewer"].includes(userRole)) {
     return (
       <main className="auth-shell">
         <section className="auth-card">
