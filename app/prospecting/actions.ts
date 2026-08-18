@@ -14,6 +14,7 @@ export async function createResearchRequest(formData: FormData) {
   const supabase = await createSupabaseServerClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) redirect("/login");
+
   const roleResult = await supabase.rpc("get_my_role" as never);
   const role = roleResult.error ? null : (roleResult.data as Role | null);
   if (!role || !["admin", "operator"].includes(role)) redirect("/prospecting?error=unauthorized");
@@ -45,6 +46,8 @@ export async function createResearchRequest(formData: FormData) {
     redirect("/prospecting?error=worker_configuration");
   }
 
+  let workerFailure: string | null = null;
+
   try {
     const workerResponse = await fetch(`${SUPABASE_URL}/functions/v1/research-prospects-router`, {
       method: "POST",
@@ -55,13 +58,14 @@ export async function createResearchRequest(formData: FormData) {
 
     if (!workerResponse.ok) {
       const workerBody = await workerResponse.text().catch(() => "");
-      const detail = workerBody.slice(0, 1000) || `Research worker returned ${workerResponse.status}`;
-      await supabase.from("research_requests").update({ status: "failed", error_message: detail } as never).eq("id", requestId);
-      redirect(`/prospecting?error=${encodeURIComponent("research_worker_failed")}`);
+      workerFailure = workerBody.slice(0, 1000) || `Research worker returned ${workerResponse.status}`;
     }
   } catch (workerError) {
-    const detail = workerError instanceof Error ? workerError.message : String(workerError);
-    await supabase.from("research_requests").update({ status: "failed", error_message: detail.slice(0, 1000) } as never).eq("id", requestId);
+    workerFailure = workerError instanceof Error ? workerError.message : String(workerError);
+  }
+
+  if (workerFailure) {
+    await supabase.from("research_requests").update({ status: "failed", error_message: workerFailure } as never).eq("id", requestId);
     redirect(`/prospecting?error=${encodeURIComponent("research_worker_failed")}`);
   }
 
