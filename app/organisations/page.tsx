@@ -4,6 +4,7 @@ import { createOrganisation } from "./actions";
 import type { Database } from "@/lib/data/supabase/database.types";
 
 type Organisation = Database["public"]["Tables"]["organisations"]["Row"];
+type LeadSummary = Pick<Database["public"]["Tables"]["leads"]["Row"], "id" | "organisation_id" | "status" | "score">;
 
 export default async function OrganisationsPage({ searchParams }: { searchParams: Promise<Record<string, string | string[] | undefined>> }) {
   const params = await searchParams;
@@ -21,8 +22,12 @@ export default async function OrganisationsPage({ searchParams }: { searchParams
   if (error) throw new Error(error.message);
 
   const records = (organisations ?? []) as Organisation[];
+  const leadRecords = (leads ?? []) as LeadSummary[];
   const leadCounts = new Map<string, number>();
-  for (const lead of leads ?? []) leadCounts.set(lead.organisation_id, (leadCounts.get(lead.organisation_id) ?? 0) + 1);
+  for (const lead of leadRecords) {
+    if (!lead.organisation_id) continue;
+    leadCounts.set(lead.organisation_id, (leadCounts.get(lead.organisation_id) ?? 0) + 1);
+  }
   const created = params.created === "1";
   const errorMessage = typeof params.error === "string" ? params.error : null;
   const canEdit = ["admin", "operator"].includes(userRole);
