@@ -3,8 +3,12 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
+import type { Database } from "@/lib/data/supabase/database.types";
 
 const stages = ["discovery", "qualification", "proposal", "negotiation", "won", "lost"] as const;
+
+type OpportunityInsert = Database["public"]["Tables"]["opportunities"]["Insert"];
+type AuditInsert = Database["public"]["Tables"]["audit_events"]["Insert"];
 
 async function requireUser() {
   const supabase = await createSupabaseServerClient();
@@ -32,7 +36,7 @@ export async function createOpportunity(formData: FormData) {
   if (value !== null && !Number.isFinite(value)) redirect("/opportunities?error=invalid_value");
   if (probability !== null && !Number.isFinite(probability)) redirect("/opportunities?error=invalid_probability");
 
-  const { data: opportunity, error } = await supabase.from("opportunities").insert({
+  const opportunityPayload: OpportunityInsert = {
     organisation_id: organisationId,
     lead_id: leadId,
     name,
@@ -43,14 +47,25 @@ export async function createOpportunity(formData: FormData) {
     expected_close_date: expectedCloseDate,
     owner_id: user.id,
     source: "manual",
-  }).select("id").single();
+  };
+
+  const opportunitiesTable = supabase.from("opportunities") as any;
+  const { data: opportunity, error } = await opportunitiesTable
+    .insert(opportunityPayload)
+    .select("id")
+    .single();
 
   if (error || !opportunity) redirect(`/opportunities?error=${encodeURIComponent(error?.message ?? "opportunity_create_failed")}`);
 
-  await supabase.from("audit_events").insert({
-    actor_type: "user", actor_id: user.id, action: "opportunity_created", entity_type: "opportunity", entity_id: opportunity.id,
+  const auditPayload: AuditInsert = {
+    actor_type: "user",
+    actor_id: user.id,
+    action: "opportunity_created",
+    entity_type: "opportunity",
+    entity_id: opportunity.id,
     metadata: { source: "manual", stage },
-  });
+  };
+  await (supabase.from("audit_events") as any).insert(auditPayload);
 
   revalidatePath("/opportunities");
   revalidatePath("/");
@@ -63,13 +78,19 @@ export async function updateOpportunityStage(formData: FormData) {
   const stage = String(formData.get("stage") ?? "");
   if (!id || !stages.includes(stage as (typeof stages)[number])) redirect("/opportunities?error=invalid_stage");
 
-  const { error } = await supabase.from("opportunities").update({ stage }).eq("id", id);
+  const opportunitiesTable = supabase.from("opportunities") as any;
+  const { error } = await opportunitiesTable.update({ stage }).eq("id", id);
   if (error) redirect(`/opportunities?error=${encodeURIComponent(error.message)}`);
 
-  await supabase.from("audit_events").insert({
-    actor_type: "user", actor_id: user.id, action: "opportunity_stage_updated", entity_type: "opportunity", entity_id: id,
+  const auditPayload: AuditInsert = {
+    actor_type: "user",
+    actor_id: user.id,
+    action: "opportunity_stage_updated",
+    entity_type: "opportunity",
+    entity_id: id,
     metadata: { stage },
-  });
+  };
+  await (supabase.from("audit_events") as any).insert(auditPayload);
 
   revalidatePath("/opportunities");
   revalidatePath("/");
