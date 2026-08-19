@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
+import type { Database } from "@/lib/data/supabase/database.types";
 
 const allowedStatuses = [
   "new",
@@ -16,6 +17,8 @@ const allowedStatuses = [
   "lost",
   "nurture",
 ] as const;
+
+type LeadInsert = Database["public"]["Tables"]["leads"]["Insert"];
 
 export async function createLead(formData: FormData) {
   const supabase = await createSupabaseServerClient();
@@ -33,16 +36,18 @@ export async function createLead(formData: FormData) {
   const { data: role } = await supabase.rpc("get_my_role" as never);
   if (!["admin", "operator"].includes(String(role))) redirect("/leads?error=not_authorized");
 
+  const leadPayload: LeadInsert = {
+    organisation_id: organisationId,
+    service_interest: serviceInterest,
+    problem_summary: problemSummary,
+    score,
+    status: "new",
+    source: "manual",
+  };
+
   const { data: lead, error } = await supabase
     .from("leads")
-    .insert({
-      organisation_id: organisationId,
-      service_interest: serviceInterest,
-      problem_summary: problemSummary,
-      score,
-      status: "new",
-      source: "manual",
-    })
+    .insert(leadPayload)
     .select("id")
     .single();
 
