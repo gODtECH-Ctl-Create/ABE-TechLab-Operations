@@ -45,8 +45,11 @@ export async function createLead(formData: FormData) {
     source: "manual",
   };
 
-  const { data: lead, error } = await supabase
-    .from("leads")
+  // The repository's hand-maintained Supabase type map currently causes the
+  // leads table insert overload to resolve to never[]. Keep the payload typed
+  // while isolating that generated-type mismatch to this single database call.
+  const leadsTable = supabase.from("leads") as any;
+  const { data: lead, error } = await leadsTable
     .insert(leadPayload)
     .select("id")
     .single();
