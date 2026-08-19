@@ -8,6 +8,7 @@ import type { Database } from "@/lib/data/supabase/database.types";
 type OrganisationInsert = Database["public"]["Tables"]["organisations"]["Insert"];
 type OrganisationUpdate = Database["public"]["Tables"]["organisations"]["Update"];
 type AuditInsert = Database["public"]["Tables"]["audit_events"]["Insert"];
+type OrganisationIdRow = Pick<Database["public"]["Tables"]["organisations"]["Row"], "id">;
 
 async function requireEditor() {
   const supabase = await createSupabaseServerClient();
@@ -27,8 +28,9 @@ export async function createOrganisation(formData: FormData) {
   if (!name) redirect("/organisations?error=name_required");
 
   const organisationPayload: OrganisationInsert = { name, industry, geography, website_url: websiteUrl };
-  const { data: organisation, error } = await supabase.from("organisations").insert(organisationPayload as never).select("id").single();
-  if (error || !organisation) redirect(`/organisations?error=${encodeURIComponent(error?.message ?? "organisation_create_failed")}`);
+  const { data, error } = await supabase.from("organisations").insert(organisationPayload as never).select("id").single();
+  if (error || !data) redirect(`/organisations?error=${encodeURIComponent(error?.message ?? "organisation_create_failed")}`);
+  const organisation = data as unknown as OrganisationIdRow;
 
   const auditPayload: AuditInsert = {
     actor_type: "user", actor_id: user.id, action: "organisation_created", entity_type: "organisation", entity_id: organisation.id,
