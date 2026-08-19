@@ -20,6 +20,8 @@ const allowedStatuses = [
 
 type LeadInsert = Database["public"]["Tables"]["leads"]["Insert"];
 
+type AuditInsert = Database["public"]["Tables"]["audit_events"]["Insert"];
+
 export async function createLead(formData: FormData) {
   const supabase = await createSupabaseServerClient();
   const { data: { user } } = await supabase.auth.getUser();
@@ -45,9 +47,6 @@ export async function createLead(formData: FormData) {
     source: "manual",
   };
 
-  // The repository's hand-maintained Supabase type map currently causes the
-  // leads table insert overload to resolve to never[]. Keep the payload typed
-  // while isolating that generated-type mismatch to this single database call.
   const leadsTable = supabase.from("leads") as any;
   const { data: lead, error } = await leadsTable
     .insert(leadPayload)
@@ -56,14 +55,15 @@ export async function createLead(formData: FormData) {
 
   if (error || !lead) redirect(`/leads?error=${encodeURIComponent(error?.message ?? "lead_create_failed")}`);
 
-  await supabase.from("audit_events").insert({
+  const auditPayload: AuditInsert = {
     actor_type: "user",
     actor_id: user.id,
     action: "lead_created",
     entity_type: "lead",
     entity_id: lead.id,
     metadata: { source: "manual" },
-  });
+  };
+  await (supabase.from("audit_events") as any).insert(auditPayload);
 
   revalidatePath("/leads");
   revalidatePath("/");
@@ -82,17 +82,18 @@ export async function updateLeadStatus(formData: FormData) {
   const { data: role } = await supabase.rpc("get_my_role" as never);
   if (!["admin", "operator"].includes(String(role))) redirect("/leads?error=not_authorized");
 
-  const { error } = await supabase.from("leads").update({ status }).eq("id", leadId);
+  const { error } = await (supabase.from("leads") as any).update({ status }).eq("id", leadId);
   if (error) redirect(`/leads?error=${encodeURIComponent(error.message)}`);
 
-  await supabase.from("audit_events").insert({
+  const auditPayload: AuditInsert = {
     actor_type: "user",
     actor_id: user.id,
     action: "lead_status_updated",
     entity_type: "lead",
     entity_id: leadId,
     metadata: { status },
-  });
+  };
+  await (supabase.from("audit_events") as any).insert(auditPayload);
 
   revalidatePath("/leads");
   revalidatePath("/");
