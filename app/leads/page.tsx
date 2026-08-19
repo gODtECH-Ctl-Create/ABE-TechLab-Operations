@@ -92,7 +92,7 @@ export default async function LeadsPage({ searchParams }: Props) {
 
       <section className="card pipeline-card">
         <div className="section-heading">
-          <div><div className="eyebrow">Live data</div><h2>Lead pipeline</h2><p>Move leads through the sales process without relying on AI.</p></div>
+          <div><div className="eyebrow">Live data</div><h2>Lead pipeline</h2><p>Move leads through the sales process without relying on artificial intelligence.</p></div>
           <span className="badge">{leads.length} records</span>
         </div>
         <div className="pipeline">
@@ -114,7 +114,7 @@ export default async function LeadsPage({ searchParams }: Props) {
                         <form action={updateLeadStatus} className="status-form">
                           <input type="hidden" name="lead_id" value={lead.id} />
                           <label className="sr-only" htmlFor={`status-${lead.id}`}>Lead status</label>
-                          <select id={`status-${lead.id}`} name="status" defaultValue={lead.status} onChange={undefined}>
+                          <select id={`status-${lead.id}`} name="status" defaultValue={lead.status}>
                             {stages.map((option) => <option value={option.id} key={option.id}>{option.label}</option>)}
                             <option value="lost">Lost</option>
                             <option value="nurture">Nurture</option>
