@@ -3,6 +3,7 @@ import { SpeedInsights } from "@vercel/speed-insights/next";
 import "./globals.css";
 import "./prospecting/research.css";
 import "./organisations/organisation.css";
+import "./approval/approval.css";
 
 export const metadata: Metadata = {
   title: "ABE TechLab Operations",
