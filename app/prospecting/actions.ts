@@ -10,6 +10,8 @@ type Role = "admin" | "operator" | "reviewer";
 type ResearchRequestInsert = Database["public"]["Tables"]["research_requests"]["Insert"];
 type AuditEventInsert = Database["public"]["Tables"]["audit_events"]["Insert"];
 
+const AI_RESEARCH_ENABLED = process.env.AI_RESEARCH_ENABLED === "true";
+
 export async function createResearchRequest(formData: FormData) {
   const supabase = await createSupabaseServerClient();
   const { data: { user } } = await supabase.auth.getUser();
@@ -35,9 +37,16 @@ export async function createResearchRequest(formData: FormData) {
     action: "research.request_created",
     entity_type: "research_request",
     entity_id: requestId,
-    metadata: { query, geography, industries, requested_by_role: role },
+    metadata: { query, geography, industries, requested_by_role: role, ai_research_enabled: AI_RESEARCH_ENABLED },
   };
   await supabase.from("audit_events").insert(auditPayload as never);
+
+  if (!AI_RESEARCH_ENABLED) {
+    revalidatePath("/prospecting");
+    revalidatePath("/ai");
+    revalidatePath("/");
+    redirect(`/prospecting?created=${requestId}&queued=1`);
+  }
 
   const { data: sessionData } = await supabase.auth.getSession();
   const accessToken = sessionData.session?.access_token;
@@ -47,7 +56,6 @@ export async function createResearchRequest(formData: FormData) {
   }
 
   let workerFailure: string | null = null;
-
   try {
     const workerResponse = await fetch(`${SUPABASE_URL}/functions/v1/research-prospects-router`, {
       method: "POST",
@@ -55,7 +63,6 @@ export async function createResearchRequest(formData: FormData) {
       body: JSON.stringify({ requestId }),
       cache: "no-store",
     });
-
     if (!workerResponse.ok) {
       const workerBody = await workerResponse.text().catch(() => "");
       workerFailure = workerBody.slice(0, 1000) || `Research worker returned ${workerResponse.status}`;
