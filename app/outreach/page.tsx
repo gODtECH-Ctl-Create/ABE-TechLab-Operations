@@ -8,7 +8,6 @@ type Lead = Database["public"]["Tables"]["leads"]["Row"];
 type Strategy = Database["public"]["Tables"]["outreach_strategies"]["Row"];
 type Campaign = Database["public"]["Tables"]["campaigns"]["Row"];
 type Message = Database["public"]["Tables"]["campaign_messages"]["Row"];
-
 type Props = { searchParams: Promise<Record<string, string | string[] | undefined>> };
 
 const statusLabel: Record<string, string> = { draft: "Draft", needs_review: "Needs review", approved: "Approved", archived: "Archived", active: "Active", paused: "Paused", completed: "Completed", cancelled: "Cancelled" };
@@ -21,18 +20,23 @@ export default async function OutreachPage({ searchParams }: Props) {
   const { data: role } = await supabase.rpc("get_my_role" as never);
   const userRole = String(role ?? "");
   if (!["admin", "operator", "reviewer"].includes(userRole)) redirect("/");
-  const [{ data: prospectRows }, { data: leadRows }, { data: strategyRows }, { data: campaignRows }, { data: messageRows }] = await Promise.all([
+
+  const [prospectsResult, leadsResult, strategiesResult, campaignsResult, messagesResult] = await Promise.all([
     supabase.from("prospects").select("id, organisation_id, status, likely_need, recommended_service, score, confidence, evidence, created_at, updated_at").order("created_at", { ascending: false }).limit(100),
     supabase.from("leads").select("id, organisation_id, prospect_id, status, service_interest, problem_summary, score, source, created_at, updated_at").order("created_at", { ascending: false }).limit(100),
     supabase.from("outreach_strategies").select("id, prospect_id, lead_id, objective, service, persona, angle, value_proposition, talking_points, channel, sequence, messages, confidence, rationale, status, created_at, updated_at").order("created_at", { ascending: false }).limit(100),
     supabase.from("campaigns").select("id, strategy_id, lead_id, status, channel, approved_at, approved_by, created_at, updated_at").order("created_at", { ascending: false }).limit(100),
     supabase.from("campaign_messages").select("id, campaign_id, stage, subject, body, scheduled_for, status, provider_message_id, created_at, updated_at").order("created_at", { ascending: false }).limit(100),
   ]);
-  const prospects = (prospectRows ?? []) as Prospect[];
-  const leads = (leadRows ?? []) as Lead[];
-  const strategies = (strategyRows ?? []) as Strategy[];
-  const campaigns = (campaignRows ?? []) as Campaign[];
-  const messages = (messageRows ?? []) as Message[];
+
+  const queryError = [prospectsResult.error, leadsResult.error, strategiesResult.error, campaignsResult.error, messagesResult.error].find(Boolean);
+  if (queryError) throw new Error(queryError.message);
+
+  const prospects = (prospectsResult.data ?? []) as Prospect[];
+  const leads = (leadsResult.data ?? []) as Lead[];
+  const strategies = (strategiesResult.data ?? []) as Strategy[];
+  const campaigns = (campaignsResult.data ?? []) as Campaign[];
+  const messages = (messagesResult.data ?? []) as Message[];
   const editable = ["admin", "operator"].includes(userRole);
   const error = typeof params.error === "string" ? params.error : null;
   const created = typeof params.created === "string" ? params.created : null;
