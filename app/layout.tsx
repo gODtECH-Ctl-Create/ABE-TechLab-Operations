@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { SpeedInsights } from "@vercel/speed-insights/next";
 import "./globals.css";
+import "./navigation.css";
 import "./prospecting/research.css";
 import "./organisations/organisation.css";
 import "./approval/approval.css";
