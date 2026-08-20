@@ -1,7 +1,9 @@
 import type { Metadata } from "next";
 import { SpeedInsights } from "@vercel/speed-insights/next";
+import { OperationsNav } from "@/components/operations-nav";
 import "./globals.css";
 import "./navigation.css";
+import "../components/operations-nav.css";
 import "./prospecting/research.css";
 import "./organisations/organisation.css";
 import "./approval/approval.css";
@@ -15,6 +17,7 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
   return (
     <html lang="en">
       <body>
+        <OperationsNav />
         {children}
         <SpeedInsights />
       </body>
