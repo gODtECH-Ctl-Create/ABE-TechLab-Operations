@@ -33,9 +33,6 @@ export async function createStrategy(formData: FormData) {
 
   if (!prospectId || !objective || !channel) redirect("/outreach?error=strategy_required");
 
-  // Keep the form field name (value_proposition) separate from the local
-  // camelCase variable so the production build cannot reference an undefined
-  // snake_case identifier.
   const payload: StrategyInsert = {
     prospect_id: prospectId,
     lead_id: leadId,
