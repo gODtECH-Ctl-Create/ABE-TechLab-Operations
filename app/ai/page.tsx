@@ -17,12 +17,13 @@ export default async function AiControlCentre() {
   const configured = providers.filter((p) => p.configured).length;
   const failures = providers.reduce((sum, p) => sum + p.failures24h, 0);
   const requests = providers.reduce((sum, p) => sum + p.requests24h, 0);
-  const healthyProviders = providers.filter((p) => p.configured && p.failureRate24h < 10).length;
+  const observedProviders = providers.filter((p) => p.configured && p.requests24h > 0).length;
+  const watchProviders = providers.filter((p) => p.configured && p.requests24h > 0 && p.failureRate24h >= 10).length;
 
   return (
     <main className="page-shell ai-control">
       <header className="page-header">
-        <div><div className="eyebrow">Intelligence · Control plane</div><h1>AI Control Centre</h1><p>Monitor provider health, failover behavior, usage and routing without exposing provider credentials to the client.</p></div>
+        <div><div className="eyebrow">Intelligence · Control plane</div><h1>AI Control Centre</h1><p>Monitor provider configuration, observed activity, failover behavior and routing without exposing provider credentials to the client.</p></div>
         <a className="ghost-button" href="/">← Dashboard</a>
       </header>
 
@@ -36,10 +37,10 @@ export default async function AiControlCentre() {
         <div className="ai-signal">
           <div className="eyebrow">System signal</div>
           <h2>Provider posture</h2>
-          <p>{configured} of {providers.length} providers are configured. The router can resume later without changing the Operations workflow.</p>
+          <p>{configured} of {providers.length} providers are configured. Health is only reported after a provider has observed traffic.</p>
           <div className="ai-signal-grid">
             <div className="ai-signal-item"><span>Configured</span><strong>{configured}/{providers.length}</strong></div>
-            <div className="ai-signal-item"><span>Healthy</span><strong>{healthyProviders}</strong></div>
+            <div className="ai-signal-item"><span>Observed</span><strong>{observedProviders}</strong></div>
             <div className="ai-signal-item"><span>24h requests</span><strong>{requests}</strong></div>
             <div className="ai-signal-item"><span>24h failures</span><strong>{failures}</strong></div>
           </div>
@@ -47,14 +48,17 @@ export default async function AiControlCentre() {
       </section>
 
       <section className="table-card">
-        <div className="section-heading"><div><div className="eyebrow">Provider pool</div><h2>Failover order</h2><p>Configured providers are tried in priority order. Missing credentials are skipped.</p></div><span className="badge">1 → {providers.length}</span></div>
+        <div className="section-heading"><div><div className="eyebrow">Provider pool</div><h2>Failover order</h2><p>Configured providers are tried in priority order when execution is enabled. Missing credentials are skipped.</p></div><span className="badge">1 → {providers.length}</span></div>
         <div className="ai-provider-list">
           {providers.map((provider) => {
-            const healthy = provider.configured && provider.failureRate24h < 10;
+            const observed = provider.configured && provider.requests24h > 0;
+            const watch = observed && provider.failureRate24h >= 10;
+            const statusClass = !provider.configured ? "warn" : !observed ? "muted" : watch ? "warn" : "good";
+            const statusLabel = !provider.configured ? "Not configured" : !observed ? "Configured · idle" : watch ? "Observed · watch" : "Observed · healthy";
             return <div className="ai-provider-row" key={provider.name}>
               <div className="ai-rank">{provider.priority}</div>
               <div className="ai-provider-main"><strong>{provider.label}</strong><span>{provider.model}</span></div>
-              <span className={`ai-status ${healthy ? "good" : provider.configured ? "warn" : "warn"}`}><span className="dot" />{provider.configured ? (healthy ? "Configured · healthy" : "Configured · watch") : "Not configured"}</span>
+              <span className={`ai-status ${statusClass}`}><span className="dot" />{statusLabel}</span>
               <div className="ai-stat"><strong>{provider.requests24h}</strong><span>requests / 24h</span></div>
               <div className="ai-stat"><strong>{provider.failureRate24h}%</strong><span>failure rate</span></div>
             </div>;
@@ -67,11 +71,12 @@ export default async function AiControlCentre() {
         <div className="ai-rule-grid">
           <article className="ai-rule"><strong>1. Propose</strong><p>AI can generate research, qualification or outreach proposals when execution is enabled.</p></article>
           <article className="ai-rule"><strong>2. Review</strong><p>Human reviewers remain the gate before proposals affect the operational workflow.</p></article>
-          <article className="ai-rule"><strong>3. Execute</strong><p>Approved actions can execute through the relevant operational provider layer.</p></article>
+          <article className="ai-rule"><strong>3. Execute</strong><p>Only approved actions can proceed through the relevant operational provider layer.</p></article>
         </div>
-        <div className="ai-warning" style={{marginTop:"12px"}}><div><strong>Current state: paused.</strong><span>Do not expect research requests to invoke models until a provider is restored and execution is enabled.</span></div></div>
-        {agentRouter.error && <div className="ai-warning" style={{marginTop:"10px"}}><div><strong>AgentRouter warning</strong><span>{agentRouter.error}</span></div></div>}
-        <p className="ai-footer-note" style={{marginTop:"12px"}}>Provider credentials remain server-side. This page intentionally exposes status and operational posture, not secret values.</p>
+        <div className="ai-warning ai-warning-spaced"><div><strong>Current state: paused.</strong><span>Model execution is intentionally disabled. A configured provider is not treated as healthy until it has observed traffic.</span></div></div>
+        {watchProviders > 0 && <div className="ai-warning ai-warning-spaced"><div><strong>{watchProviders} provider{watchProviders === 1 ? " is" : "s are"} on watch.</strong><span>Recent traffic shows an elevated failure rate. Review provider logs before re-enabling execution.</span></div></div>}
+        {agentRouter.error && <div className="ai-warning ai-warning-spaced"><div><strong>AgentRouter warning</strong><span>{agentRouter.error}</span></div></div>}
+        <p className="ai-footer-note ai-footer-spaced">Provider credentials remain server-side. This page intentionally exposes status and operational posture, not secret values.</p>
       </section>
     </main>
   );
