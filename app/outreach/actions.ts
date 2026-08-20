@@ -30,13 +30,42 @@ export async function createStrategy(formData: FormData) {
   const angle = String(formData.get("angle") ?? "").trim() || null;
   const valueProposition = String(formData.get("value_proposition") ?? "").trim() || null;
   const channel = String(formData.get("channel") ?? "email").trim();
+
   if (!prospectId || !objective || !channel) redirect("/outreach?error=strategy_required");
 
-  const payload: StrategyInsert = { prospect_id: prospectId, lead_id: leadId, objective, service, persona, angle, value_proposition, channel, status: "needs_review", talking_points: [], sequence: [], messages: [], rationale: [] };
-  const { data: strategy, error } = await (supabase.from("outreach_strategies") as any).insert(payload).select("id").single();
+  // Keep the form field name (value_proposition) separate from the local
+  // camelCase variable so the production build cannot reference an undefined
+  // snake_case identifier.
+  const payload: StrategyInsert = {
+    prospect_id: prospectId,
+    lead_id: leadId,
+    objective,
+    service,
+    persona,
+    angle,
+    value_proposition: valueProposition,
+    channel,
+    status: "needs_review",
+    talking_points: [],
+    sequence: [],
+    messages: [],
+    rationale: [],
+  };
+
+  const { data: strategy, error } = await (supabase.from("outreach_strategies") as any)
+    .insert(payload)
+    .select("id")
+    .single();
   if (error || !strategy) redirect(`/outreach?error=${encodeURIComponent(error?.message ?? "strategy_create_failed")}`);
 
-  await (supabase.from("audit_events") as any).insert({ actor_type: "human", actor_id: user.id, action: "outreach_strategy_created", entity_type: "outreach_strategy", entity_id: strategy.id, metadata: { source: "manual", channel } });
+  await (supabase.from("audit_events") as any).insert({
+    actor_type: "human",
+    actor_id: user.id,
+    action: "outreach_strategy_created",
+    entity_type: "outreach_strategy",
+    entity_id: strategy.id,
+    metadata: { source: "manual", channel },
+  });
   revalidatePath("/outreach");
   redirect("/outreach?created=strategy");
 }
