@@ -2,6 +2,7 @@ import { redirect } from "next/navigation";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { createOpportunity, updateOpportunityStage } from "./actions";
 import type { Database } from "@/lib/data/supabase/database.types";
+import Link from "next/link";
 
 type Opportunity = Database["public"]["Tables"]["opportunities"]["Row"];
 type Organisation = Database["public"]["Tables"]["organisations"]["Row"];
@@ -86,11 +87,12 @@ export default async function OpportunitiesPage({ searchParams }: Props) {
           <div className="pipeline-title"><span>{stage.label}</span><b>{stageRows.length}</b></div>
           {stageRows.map((opportunity) => { const lead = opportunity.lead_id ? leadById.get(opportunity.lead_id) : null; return <article className="lead-card" key={opportunity.id}>
             <div className="lead-score">{opportunity.probability ?? "--"}%</div>
-            <h3>{opportunity.name}</h3>
+            <h3><Link className="text-link" href={`/opportunities/${opportunity.id}`}>{opportunity.name}</Link></h3>
             <p>{orgById.get(opportunity.organisation_id)?.name ?? "Unknown organisation"}</p>
             {opportunity.value !== null && <small>{money.format(Number(opportunity.value))} · {opportunity.currency}</small>}
             {opportunity.expected_close_date && <small>Close: {new Date(opportunity.expected_close_date).toLocaleDateString()}</small>}
             {lead && <small>Lead: {lead.service_interest ?? "General"}</small>}
+            <Link className="text-link" href={`/opportunities/${opportunity.id}`}>View opportunity →</Link>
             {(role === "admin" || role === "operator") && <form action={updateOpportunityStage} className="status-form"><input type="hidden" name="opportunity_id" value={opportunity.id} /><label className="sr-only" htmlFor={`opp-stage-${opportunity.id}`}>Opportunity stage</label><select id={`opp-stage-${opportunity.id}`} name="stage" defaultValue={opportunity.stage}>{stages.map((option) => <option value={option.id} key={option.id}>{option.label}</option>)}</select><button type="submit" className="text-link">Update</button></form>}
           </article>; })}
           {stageRows.length === 0 && <div className="empty-stage">No opportunities</div>}
