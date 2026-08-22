@@ -10,6 +10,7 @@ type Role = "admin" | "operator" | "reviewer";
 type ResearchRequestInsert = Database["public"]["Tables"]["research_requests"]["Insert"];
 type LeadInsert = Database["public"]["Tables"]["leads"]["Insert"];
 type AuditEventInsert = Database["public"]["Tables"]["audit_events"]["Insert"];
+type ProspectCandidate = Pick<Database["public"]["Tables"]["prospects"]["Row"], "id" | "organisation_id" | "status" | "likely_need" | "recommended_service" | "score">;
 
 const AI_RESEARCH_ENABLED = process.env.AI_RESEARCH_ENABLED === "true";
 
@@ -92,7 +93,8 @@ export async function convertProspectToLead(formData: FormData) {
   const prospectId = String(formData.get("prospect_id") ?? "").trim();
   if (!prospectId) redirect("/prospecting?error=prospect_required");
 
-  const { data: prospect } = await supabase.from("prospects").select("id, organisation_id, status, likely_need, recommended_service, score").eq("id", prospectId).maybeSingle();
+  const { data: prospectData } = await supabase.from("prospects").select("id, organisation_id, status, likely_need, recommended_service, score").eq("id", prospectId).maybeSingle();
+  const prospect = prospectData as ProspectCandidate | null;
   if (!prospect) redirect("/prospecting?error=prospect_not_found");
 
   const { data: existingLead } = await supabase.from("leads").select("id").eq("prospect_id", prospectId).maybeSingle();
