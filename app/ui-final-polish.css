@@ -1,0 +1,338 @@
+/* Final Operations UI hierarchy and readability pass */
+:root {
+  --accent: #b7ff3c;
+  --accent-soft: rgba(183,255,60,.12);
+  --surface-raised: #ffffff;
+  --text-strong: #17191c;
+  --text: #343a41;
+  --text-muted: #737a83;
+  --text-subtle: #9aa0a8;
+  --line: #e8ebee;
+}
+
+.page-shell,
+.main {
+  color: var(--text);
+}
+
+.page-header h1,
+.header h1 { color: var(--text-strong); }
+.page-header p,
+.header-subtitle { max-width: 760px; line-height: 1.65; }
+
+.card,
+.summary-card,
+.metric-card,
+.table-card {
+  overflow: hidden;
+}
+
+.section-heading h2 {
+  color: var(--text-strong);
+  line-height: 1.25;
+}
+
+.section-heading p,
+.section-copy {
+  line-height: 1.65;
+}
+
+/* Shared list rows: preserve hierarchy instead of packing everything into one line. */
+.compact-list {
+  gap: 0;
+}
+.compact-row {
+  align-items: flex-start;
+  gap: 18px;
+  padding: 15px 0;
+}
+.compact-row > div:first-child {
+  min-width: 0;
+  flex: 1 1 auto;
+}
+.compact-row strong {
+  color: var(--text-strong);
+  font-size: 13px;
+  line-height: 1.4;
+  letter-spacing: -.01em;
+}
+.compact-row span {
+  color: var(--text-muted);
+  font-size: 11px;
+  line-height: 1.55;
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+.compact-row .status-chip {
+  flex: 0 0 auto;
+  margin-top: 1px !important;
+  background: #fafbfc;
+}
+
+/* Pipeline cards */
+.pipeline {
+  align-items: stretch;
+}
+.pipeline-column {
+  min-width: 270px;
+}
+.pipeline-title {
+  min-height: 38px;
+  padding: 0 3px 10px;
+  border-bottom: 1px solid var(--line);
+}
+.lead-card {
+  display: grid;
+  gap: 9px;
+  margin-top: 10px;
+  padding: 15px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: #fff;
+  box-shadow: 0 3px 12px rgba(15,18,22,.035);
+}
+.lead-card:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 10px 22px rgba(15,18,22,.07);
+}
+.lead-card h3 {
+  margin: 0;
+  color: var(--text-strong);
+  font-size: 14px;
+  line-height: 1.35;
+  letter-spacing: -.015em;
+}
+.lead-card p {
+  margin: 0;
+  color: var(--text);
+  font-size: 12px;
+  line-height: 1.45;
+  font-weight: 650;
+}
+.lead-card small {
+  display: block;
+  margin: 0;
+  color: var(--text-muted);
+  font-size: 10px;
+  line-height: 1.55;
+}
+.lead-score {
+  justify-self: start;
+  padding: 5px 8px;
+  border-radius: 999px;
+  background: var(--accent-soft);
+  color: #3b5512;
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: .04em;
+}
+
+/* Status controls should read as controls, not as another metadata string. */
+.status-form {
+  margin-top: 5px;
+  padding-top: 10px;
+  border-top: 1px solid var(--line);
+}
+.status-form label:not(.sr-only) {
+  display: grid;
+  gap: 5px;
+  min-width: 120px;
+  color: var(--text-subtle);
+  font-size: 9px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .08em;
+}
+.status-form select {
+  min-height: 39px;
+  font-size: 11px;
+  background: #fff;
+}
+
+/* Detail pages: turn dense metadata into readable blocks. */
+.detail-grid,
+.lead-detail-layout,
+.organisation-detail-grid,
+.lead-details-grid {
+  gap: 14px;
+}
+.detail-fields,
+.detail-list {
+  display: grid;
+  gap: 12px;
+}
+.detail-fields > div,
+.detail-list > div,
+.recommended {
+  padding: 12px 13px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: #fafbfc;
+}
+.detail-fields span,
+.detail-list dt,
+.recommended strong {
+  display: block;
+  margin-bottom: 4px;
+  color: var(--text-subtle);
+  font-size: 9px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: .09em;
+}
+.detail-fields strong,
+.detail-list dd,
+.recommended span {
+  margin: 0;
+  color: var(--text);
+  font-size: 12px;
+  line-height: 1.55;
+  overflow-wrap: anywhere;
+}
+.detail-list dt,
+.detail-list dd { margin: 0; }
+
+/* Audit/activity readability */
+.activity-list {
+  display: grid;
+  gap: 0;
+}
+.activity-item {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 14px;
+  padding: 13px 0;
+  border-top: 1px solid var(--line);
+}
+.activity-item:first-child { border-top: 0; }
+.activity-item strong {
+  color: var(--text);
+  font-size: 11px;
+  line-height: 1.45;
+  text-transform: capitalize;
+}
+.activity-item span {
+  flex: 0 0 auto;
+  color: var(--text-subtle);
+  font-size: 9px;
+  line-height: 1.45;
+}
+
+/* Summary cards: clearer label/value relationship */
+.summary-card,
+.metric-card {
+  position: relative;
+  min-width: 0;
+}
+.summary-card > span,
+.metric-label {
+  display: block;
+  color: var(--text-muted);
+  line-height: 1.35;
+}
+.summary-card > strong,
+.metric-value {
+  display: block;
+  margin-top: 8px;
+  color: var(--text-strong);
+}
+
+/* Accent only for meaning, never as a full block everywhere. */
+.badge,
+.status-chip,
+.score-pill {
+  border-color: #dfe7cf;
+}
+
+.primary-button:focus-visible,
+.summary-card-link:focus-visible,
+.metric-card-link:focus-visible {
+  box-shadow: 0 0 0 3px rgba(183,255,60,.28);
+}
+
+/* Forms: consistent grouping and breathing room */
+.research-form,
+.organisation-form {
+  gap: 18px;
+}
+.research-form-grid,
+.organisation-form-grid {
+  gap: 15px;
+}
+.research-form label,
+.organisation-form label {
+  line-height: 1.35;
+}
+
+/* Outreach and Approval: keep decision information grouped. */
+.approval-item,
+.provider-row {
+  padding: 15px 0;
+}
+.approval-item-main,
+.provider-row > div:first-child {
+  min-width: 0;
+}
+.approval-item-main h3 {
+  line-height: 1.35;
+}
+.approval-item-main p {
+  line-height: 1.6;
+}
+.approval-kicker {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: 7px;
+}
+
+/* Make website-intake data unmistakably distinct from internal metadata. */
+.lead-details-grid .recommended {
+  min-width: 0;
+}
+
+/* Responsive: stack secondary information before it becomes cramped. */
+@media (max-width: 900px) {
+  .compact-row {
+    flex-direction: column;
+    gap: 10px;
+  }
+  .compact-row .status-chip,
+  .compact-row .status-form,
+  .compact-row form {
+    align-self: flex-start;
+  }
+  .activity-item {
+    flex-direction: column;
+    gap: 4px;
+  }
+}
+
+@media (max-width: 760px) {
+  .pipeline-column {
+    min-width: 290px;
+  }
+  .lead-card {
+    padding: 14px;
+  }
+  .lead-details-grid,
+  .detail-grid,
+  .lead-detail-layout,
+  .organisation-detail-grid {
+    grid-template-columns: 1fr !important;
+  }
+}
+
+@media (max-width: 440px) {
+  .compact-row {
+    padding: 14px 0;
+  }
+  .lead-card h3 {
+    font-size: 13px;
+  }
+  .lead-card p,
+  .compact-row strong {
+    font-size: 12px;
+  }
+}
