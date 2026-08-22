@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { updateOrganisation } from "../actions";
+import { createSupabaseServerClient } from "@/lib/supabase/server";
 import type { Database } from "@/lib/data/supabase/database.types";
 
 type Organisation = Database["public"]["Tables"]["organisations"]["Row"];
