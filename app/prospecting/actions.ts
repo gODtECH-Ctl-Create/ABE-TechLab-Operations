@@ -8,18 +8,23 @@ import type { Database } from "../../lib/data/supabase/database.types";
 
 type Role = "admin" | "operator" | "reviewer";
 type ResearchRequestInsert = Database["public"]["Tables"]["research_requests"]["Insert"];
+type LeadInsert = Database["public"]["Tables"]["leads"]["Insert"];
 type AuditEventInsert = Database["public"]["Tables"]["audit_events"]["Insert"];
 
 const AI_RESEARCH_ENABLED = process.env.AI_RESEARCH_ENABLED === "true";
 
-export async function createResearchRequest(formData: FormData) {
+async function requireOperator() {
   const supabase = await createSupabaseServerClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) redirect("/login");
-
   const roleResult = await supabase.rpc("get_my_role" as never);
   const role = roleResult.error ? null : (roleResult.data as Role | null);
   if (!role || !["admin", "operator"].includes(role)) redirect("/prospecting?error=unauthorized");
+  return { supabase, user, role };
+}
+
+export async function createResearchRequest(formData: FormData) {
+  const { supabase, user, role } = await requireOperator();
 
   const query = String(formData.get("query") ?? "").trim();
   const geography = String(formData.get("geography") ?? "").trim() || null;
@@ -80,4 +85,46 @@ export async function createResearchRequest(formData: FormData) {
   revalidatePath("/ai");
   revalidatePath("/");
   redirect(`/prospecting?created=${requestId}`);
+}
+
+export async function convertProspectToLead(formData: FormData) {
+  const { supabase, user } = await requireOperator();
+  const prospectId = String(formData.get("prospect_id") ?? "").trim();
+  if (!prospectId) redirect("/prospecting?error=prospect_required");
+
+  const { data: prospect } = await supabase.from("prospects").select("id, organisation_id, status, likely_need, recommended_service, score").eq("id", prospectId).maybeSingle();
+  if (!prospect) redirect("/prospecting?error=prospect_not_found");
+
+  const existing = await supabase.from("leads").select("id").eq("prospect_id", prospectId).maybeSingle();
+  if (existing.data?.id) redirect(`/leads/${existing.data.id}`);
+
+  const leadPayload: LeadInsert = {
+    organisation_id: prospect.organisation_id,
+    prospect_id: prospect.id,
+    status: "new",
+    service_interest: prospect.recommended_service,
+    problem_summary: prospect.likely_need,
+    score: prospect.score,
+    source: "prospect_research",
+  };
+
+  const { data: lead, error } = await supabase.from("leads").insert(leadPayload as never).select("id").single();
+  if (error || !lead) redirect(`/prospecting/${prospectId}?error=${encodeURIComponent(error?.message ?? "lead_create_failed")}`);
+
+  await supabase.from("prospects").update({ status: "converted" } as never).eq("id", prospectId);
+  await supabase.from("audit_events").insert({
+    actor_type: "human",
+    actor_id: user.id,
+    action: "prospect_converted_to_lead",
+    entity_type: "prospect",
+    entity_id: prospectId,
+    metadata: { lead_id: lead.id, source: "prospect_research" },
+  } as never);
+
+  revalidatePath("/prospecting");
+  revalidatePath(`/prospecting/${prospectId}`);
+  revalidatePath("/leads");
+  revalidatePath(`/leads/${lead.id}`);
+  revalidatePath("/");
+  redirect(`/leads/${lead.id}`);
 }
