@@ -8,7 +8,7 @@ const supabase = createSupabaseBrowserClient();
 
 // The generated Supabase Database type currently does not expose approval_queue,
 // so keep the table boundary typed locally until the schema types are regenerated.
-const approvalQueue = () => supabase.from("approval_queue" as never);
+const approvalQueue = () => supabase.from("approval_queue" as never) as any;
 
 type Approval = {
   id: string;
