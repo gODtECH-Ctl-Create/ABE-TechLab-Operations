@@ -10,10 +10,12 @@ const items = [
   { href: "/leads", label: "Leads" },
   { href: "/opportunities", label: "Opportunities" },
   { href: "/outreach", label: "Outreach" },
+  { href: "/follow-ups", label: "Follow-ups" },
   { href: "/approval", label: "Approval Queue" },
   { href: "/prospecting", label: "Research" },
-  { href: "/ai", label: "AI Control Centre" },
+  { href: "/contacts", label: "Contacts" },
   { href: "/organisations", label: "Organisations" },
+  { href: "/ai", label: "AI Control Centre" },
 ];
 
 export function OperationsNav() {
