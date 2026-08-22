@@ -2,9 +2,9 @@
 
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
-import { createClient } from "@/lib/supabase/client";
+import { createSupabaseBrowserClient } from "@/lib/supabase/client";
 
-const supabase = createClient();
+const supabase = createSupabaseBrowserClient();
 
 type Approval = {
   id: string;
