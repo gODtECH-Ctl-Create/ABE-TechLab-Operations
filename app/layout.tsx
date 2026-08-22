@@ -10,6 +10,7 @@ import "./ui-final-polish.css";
 import "./prospecting/research.css";
 import "./organisations/organisation.css";
 import "./approval/approval.css";
+import "./approval/approval-polish.css";
 
 export const metadata: Metadata = {
   title: "ABE TechLab Operations",
