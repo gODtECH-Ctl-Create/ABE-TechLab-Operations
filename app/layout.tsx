@@ -5,6 +5,7 @@ import "./globals.css";
 import "./navigation.css";
 import "../components/operations-nav.css";
 import "./ui-polish.css";
+import "./operations-visual-system.css";
 import "./prospecting/research.css";
 import "./organisations/organisation.css";
 import "./approval/approval.css";
