@@ -6,6 +6,10 @@ import { createSupabaseBrowserClient } from "@/lib/supabase/client";
 
 const supabase = createSupabaseBrowserClient();
 
+// The generated Supabase Database type currently does not expose approval_queue,
+// so keep the table boundary typed locally until the schema types are regenerated.
+const approvalQueue = () => supabase.from("approval_queue" as never);
+
 type Approval = {
   id: string;
   title: string;
@@ -35,7 +39,7 @@ export default function ApprovalsPage() {
 
   async function load() {
     setLoading(true);
-    const query = supabase.from("approval_queue").select("*").order("created_at", { ascending: false });
+    const query = approvalQueue().select("*").order("created_at", { ascending: false });
     const { data, error } = filter === "all" ? await query : await query.eq("status", filter);
     if (error) setMessage(error.message);
     else setItems((data ?? []) as Approval[]);
@@ -49,7 +53,7 @@ export default function ApprovalsPage() {
   async function review(id: string, status: string) {
     setReviewing(id);
     setMessage("");
-    const { error } = await supabase.from("approval_queue").update({ status, reviewed_at: new Date().toISOString() }).eq("id", id);
+    const { error } = await approvalQueue().update({ status, reviewed_at: new Date().toISOString() }).eq("id", id);
     if (error) setMessage(error.message);
     else await load();
     setReviewing(null);
