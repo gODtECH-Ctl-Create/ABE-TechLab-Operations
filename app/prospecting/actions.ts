@@ -95,8 +95,9 @@ export async function convertProspectToLead(formData: FormData) {
   const { data: prospect } = await supabase.from("prospects").select("id, organisation_id, status, likely_need, recommended_service, score").eq("id", prospectId).maybeSingle();
   if (!prospect) redirect("/prospecting?error=prospect_not_found");
 
-  const existing = await supabase.from("leads").select("id").eq("prospect_id", prospectId).maybeSingle();
-  if (existing.data?.id) redirect(`/leads/${existing.data.id}`);
+  const { data: existingLead } = await supabase.from("leads").select("id").eq("prospect_id", prospectId).maybeSingle();
+  const existing = existingLead as { id: string } | null;
+  if (existing?.id) redirect(`/leads/${existing.id}`);
 
   const leadPayload: LeadInsert = {
     organisation_id: prospect.organisation_id,
@@ -111,6 +112,7 @@ export async function convertProspectToLead(formData: FormData) {
   const { data: lead, error } = await supabase.from("leads").insert(leadPayload as never).select("id").single();
   if (error || !lead) redirect(`/prospecting/${prospectId}?error=${encodeURIComponent(error?.message ?? "lead_create_failed")}`);
 
+  const createdLead = lead as { id: string };
   await supabase.from("prospects").update({ status: "converted" } as never).eq("id", prospectId);
   await supabase.from("audit_events").insert({
     actor_type: "human",
@@ -118,13 +120,13 @@ export async function convertProspectToLead(formData: FormData) {
     action: "prospect_converted_to_lead",
     entity_type: "prospect",
     entity_id: prospectId,
-    metadata: { lead_id: lead.id, source: "prospect_research" },
+    metadata: { lead_id: createdLead.id, source: "prospect_research" },
   } as never);
 
   revalidatePath("/prospecting");
   revalidatePath(`/prospecting/${prospectId}`);
   revalidatePath("/leads");
-  revalidatePath(`/leads/${lead.id}`);
+  revalidatePath(`/leads/${createdLead.id}`);
   revalidatePath("/");
-  redirect(`/leads/${lead.id}`);
+  redirect(`/leads/${createdLead.id}`);
 }
