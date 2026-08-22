@@ -7,6 +7,7 @@ import type { Database } from "@/lib/data/supabase/database.types";
 type Opportunity = Database["public"]["Tables"]["opportunities"]["Row"];
 type Organisation = Database["public"]["Tables"]["organisations"]["Row"];
 type Lead = Database["public"]["Tables"]["leads"]["Row"];
+type AuditEvent = Database["public"]["Tables"]["audit_events"]["Row"];
 type Props = { params: Promise<{ id: string }> };
 
 const stages = ["discovery", "qualification", "proposal", "negotiation", "won", "lost"] as const;
@@ -25,14 +26,15 @@ export default async function OpportunityDetailPage({ params }: Props) {
   if (!opportunity) notFound();
   const row = opportunity as Opportunity;
 
-  const [{ data: organisation }, { data: lead }, { data: audit }] = await Promise.all([
-    supabase.from("organisations").select("id, name, website_url, industry, geography").eq("id", row.organisation_id).maybeSingle(),
-    row.lead_id ? supabase.from("leads").select("id, service_interest, status, problem_summary, score, source").eq("id", row.lead_id).maybeSingle() : Promise.resolve({ data: null }),
-    supabase.from("audit_events").select("id, action, actor_type, created_at, metadata").eq("entity_type", "opportunity").eq("entity_id", row.id).order("created_at", { ascending: false }).limit(30),
-  ]);
+  const organisationResult = await supabase.from("organisations").select("id, name, website_url, industry, geography").eq("id", row.organisation_id).maybeSingle();
+  const leadResult = row.lead_id
+    ? await supabase.from("leads").select("id, service_interest, status, problem_summary, score, source").eq("id", row.lead_id).maybeSingle()
+    : { data: null };
+  const auditResult = await supabase.from("audit_events").select("id, action, actor_type, created_at, metadata").eq("entity_type", "opportunity").eq("entity_id", row.id).order("created_at", { ascending: false }).limit(30);
 
-  const org = organisation as Pick<Organisation, "id" | "name" | "website_url" | "industry" | "geography"> | null;
-  const linkedLead = lead as Pick<Lead, "id" | "service_interest" | "status" | "problem_summary" | "score" | "source"> | null;
+  const org = organisationResult.data as Pick<Organisation, "id" | "name" | "website_url" | "industry" | "geography"> | null;
+  const linkedLead = leadResult.data as Pick<Lead, "id" | "service_interest" | "status" | "problem_summary" | "score" | "source"> | null;
+  const audit = (auditResult.data ?? []) as Pick<AuditEvent, "id" | "action" | "actor_type" | "created_at" | "metadata">[];
 
   return <main className="page-shell">
     <header className="page-header"><div><div className="eyebrow">CRM · Opportunity</div><h1>{row.name}</h1><p>{row.description || "No opportunity description has been added yet."}</p></div><Link className="ghost-button" href="/opportunities">← Opportunities</Link></header>
@@ -42,6 +44,6 @@ export default async function OpportunityDetailPage({ params }: Props) {
       <section className="card"><div className="eyebrow">Account</div><h2>Organisation</h2>{org ? <><p><Link className="text-link" href={`/organisations/${org.id}`}>{org.name}</Link></p><dl className="detail-list"><div><dt>Industry</dt><dd>{org.industry || "Not set"}</dd></div><div><dt>Geography</dt><dd>{org.geography || "Not set"}</dd></div><div><dt>Website</dt><dd>{org.website_url || "Not set"}</dd></div></dl></> : <p>Organisation not found.</p>}</section>
       <section className="card"><div className="eyebrow">Origin</div><h2>Related lead</h2>{linkedLead ? <><p><Link className="text-link" href={`/leads/${linkedLead.id}`}>View linked lead</Link></p><dl className="detail-list"><div><dt>Service</dt><dd>{linkedLead.service_interest || "Not set"}</dd></div><div><dt>Lead status</dt><dd>{linkedLead.status}</dd></div><div><dt>Fit score</dt><dd>{linkedLead.score ?? "Not scored"}</dd></div><div><dt>Source</dt><dd>{linkedLead.source || "Not set"}</dd></div><div><dt>Problem</dt><dd>{linkedLead.problem_summary || "Not set"}</dd></div></dl></> : <p>No lead is linked to this opportunity.</p>}</section>
     </div>
-    <section className="card"><div className="section-heading"><div><div className="eyebrow">History</div><h2>Opportunity activity</h2><p>Changes recorded against this opportunity.</p></div></div>{audit && audit.length > 0 ? <div className="activity-list">{audit.map((event) => <div className="activity-item" key={event.id}><strong>{String(event.action).replaceAll("_", " ")}</strong><span>{new Date(event.created_at).toLocaleString()}</span></div>)}</div> : <div className="empty-stage">No activity recorded yet.</div>}</section>
+    <section className="card"><div className="section-heading"><div><div className="eyebrow">History</div><h2>Opportunity activity</h2><p>Changes recorded against this opportunity.</p></div></div>{audit.length > 0 ? <div className="activity-list">{audit.map((event) => <div className="activity-item" key={event.id}><strong>{String(event.action).replaceAll("_", " ")}</strong><span>{new Date(event.created_at).toLocaleString()}</span></div>)}</div> : <div className="empty-stage">No activity recorded yet.</div>}</section>
   </main>;
 }
