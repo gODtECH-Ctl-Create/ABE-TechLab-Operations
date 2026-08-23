@@ -11,15 +11,36 @@ export function RecordOverflowMenu({ entity, id, href, label = "More actions" }:
   const [open, setOpen] = useState(false);
   const [busy, setBusy] = useState<"archive" | "trash" | null>(null);
   const [message, setMessage] = useState("");
+  const [openUp, setOpenUp] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
+  const menuRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     if (!open) return;
-    const onPointerDown = (event: MouseEvent) => { if (ref.current && !ref.current.contains(event.target as Node)) setOpen(false); };
-    const onKeyDown = (event: KeyboardEvent) => { if (event.key === "Escape") setOpen(false); };
+    function onPointerDown(event: MouseEvent) {
+      if (ref.current && !ref.current.contains(event.target as Node)) setOpen(false);
+    }
+    function onKeyDown(event: KeyboardEvent) {
+      if (event.key === "Escape") setOpen(false);
+    }
     document.addEventListener("mousedown", onPointerDown);
     document.addEventListener("keydown", onKeyDown);
-    return () => { document.removeEventListener("mousedown", onPointerDown); document.removeEventListener("keydown", onKeyDown); };
+    return () => {
+      document.removeEventListener("mousedown", onPointerDown);
+      document.removeEventListener("keydown", onKeyDown);
+    };
+  }, [open]);
+
+  useEffect(() => {
+    if (!open) return;
+    const frame = requestAnimationFrame(() => {
+      const trigger = ref.current?.getBoundingClientRect();
+      const menu = menuRef.current?.getBoundingClientRect();
+      if (!trigger || !menu) return;
+      const nextOpenUp = trigger.bottom + menu.height + 12 > window.innerHeight;
+      setOpenUp(nextOpenUp);
+    });
+    return () => cancelAnimationFrame(frame);
   }, [open]);
 
   async function share() {
@@ -37,21 +58,20 @@ export function RecordOverflowMenu({ entity, id, href, label = "More actions" }:
       const data = await response.json();
       if (!response.ok) throw new Error(data.error || "Action failed");
       window.location.reload();
-    } catch (error) { setMessage(error instanceof Error ? error.message : "Action failed"); setBusy(null); }
+    } catch (error) {
+      setMessage(error instanceof Error ? error.message : "Action failed");
+      setBusy(null);
+    }
   }
 
-  return (
-    <div className="record-actions-menu-wrap" ref={ref}>
-      <button type="button" className="record-actions-menu-trigger" aria-label={label} aria-haspopup="menu" aria-expanded={open} onClick={(event) => { event.preventDefault(); event.stopPropagation(); setMessage(""); setOpen((value) => !value); }}>
-        <span aria-hidden="true">•••</span>
-      </button>
-      {open && <div className="record-actions-menu" role="menu" onClick={(event) => event.stopPropagation()}>
-        <Link className="record-actions-menu-item" href={href} role="menuitem" onClick={() => setOpen(false)}>Edit</Link>
-        <button type="button" role="menuitem" onClick={share}>Share</button>
-        <button type="button" role="menuitem" disabled={busy !== null} onClick={() => run("archive")}>{busy === "archive" ? "Archiving…" : "Archive"}</button>
-        <button type="button" role="menuitem" className="record-actions-menu-danger" disabled={busy !== null} onClick={() => { if (window.confirm("Move this record to Trash? It can be restored later.")) run("trash"); }}>{busy === "trash" ? "Moving…" : "Move to Trash"}</button>
-        {message && <span className="record-actions-menu-message" role="status">{message}</span>}
-      </div>}
-    </div>
-  );
+  return <div className="record-overflow" ref={ref}>
+    <button type="button" className="record-overflow-trigger" aria-label={label} aria-haspopup="menu" aria-expanded={open} onClick={(event) => { event.preventDefault(); event.stopPropagation(); setMessage(""); setOpen((value) => !value); }}><span aria-hidden="true">•••</span></button>
+    {open && <div ref={menuRef} className={`record-overflow-menu${openUp ? " open-up" : ""}`} role="menu" onClick={(event) => event.stopPropagation()}>
+      <Link className="record-overflow-item" href={href} role="menuitem" onClick={() => setOpen(false)}>Edit</Link>
+      <button className="record-overflow-item" type="button" role="menuitem" onClick={share}>Share</button>
+      <button className="record-overflow-item" type="button" role="menuitem" disabled={busy !== null} onClick={() => run("archive")}>{busy === "archive" ? "Archiving…" : "Archive"}</button>
+      <button className="record-overflow-item danger" type="button" role="menuitem" disabled={busy !== null} onClick={() => { if (window.confirm("Move this record to Trash? It can be restored later.")) run("trash"); }}>{busy === "trash" ? "Moving…" : "Move to Trash"}</button>
+      {message && <span className="record-overflow-message" role="status">{message}</span>}
+    </div>}
+  </div>;
 }
