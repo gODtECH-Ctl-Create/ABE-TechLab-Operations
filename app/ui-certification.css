@@ -1,0 +1,216 @@
+/* Final UI certification pass. Additive only: no foundation layout rewrites. */
+
+/* Special surfaces: use background color only where the content has a distinct role. */
+.command-bar {
+  background: linear-gradient(180deg, #fbfcfd 0%, #f6f8fa 100%);
+  border: 1px solid #dfe4e8;
+  border-radius: 14px;
+}
+
+.metric-card.featured {
+  background: linear-gradient(180deg, #fbfff2 0%, #f4f9e9 100%);
+  border-color: #d9e8b8;
+}
+
+.metric-card.featured .metric-value {
+  color: #30420e;
+}
+
+.aria-card {
+  background: linear-gradient(180deg, #fbfbff 0%, #f6f7fc 100%);
+  border-color: #dfe2f2;
+}
+
+.aria-card .mode-pill {
+  background: #eeedf8;
+  color: #5f56a3;
+  border: 1px solid #ddd9f2;
+}
+
+.aria-brief {
+  background: #f4f2fb;
+  border: 1px solid #e4e0f3;
+  border-radius: 12px;
+}
+
+/* Governance / human review panels. */
+.approval-card {
+  background: #fffdfa;
+  border: 1px solid #eee4d5;
+  border-radius: 12px;
+}
+
+.approval-context {
+  background: #fffaf0;
+  border: 1px solid #f1dfba;
+  border-radius: 10px;
+}
+
+.attention-list-card {
+  border-color: #eadedb;
+}
+
+.attention-row {
+  background: linear-gradient(90deg, rgba(255,250,248,.72), rgba(255,255,255,0));
+  border-radius: 9px;
+  padding-left: 10px;
+  padding-right: 10px;
+}
+
+/* Notification tones. */
+.notification-icon.new { background: #eff6ff; color: #2563eb; }
+.notification-icon.review { background: #fff7ed; color: #b45309; }
+.notification-icon.reminder { background: #fff7ed; color: #b45309; }
+.notification-icon.system { background: #f0fdf4; color: #15803d; }
+
+/* Settings / profile role cards. */
+.settings-section {
+  position: relative;
+  background: #fff;
+}
+
+.settings-section:hover {
+  border-color: #cfd5db;
+}
+
+.settings-section .text-link {
+  margin-top: 10px;
+  display: inline-block;
+}
+
+.settings-note {
+  background: #f7faf3;
+  border-color: #dce8c5;
+}
+
+/* Forms: one obvious grouping per control; avoid controls visually merging. */
+.research-form-grid > label,
+.organisation-form-grid > label {
+  min-width: 0;
+}
+
+.check-field {
+  align-content: start;
+}
+
+.check-field input[type="checkbox"] {
+  width: 18px;
+  min-height: 18px;
+  margin-top: 2px;
+}
+
+/* Tables and long rows: preserve the record identity first. */
+.table-card td:first-child,
+.table-card th:first-child {
+  min-width: 160px;
+}
+
+.table-card td,
+.table-card th {
+  vertical-align: top;
+}
+
+/* Detail-page action zone: keep the three-dot control local to the record. */
+.record-item .record-overflow-trigger,
+.lead-card .record-overflow-trigger {
+  position: absolute;
+  top: 9px;
+  right: 9px;
+  z-index: 4;
+}
+
+/* Prevent long content from widening the layout. */
+.page-shell,
+.main,
+.card,
+.metric-card,
+.summary-card,
+.table-card,
+.detail-grid,
+.dashboard-grid,
+.detail-list,
+.detail-fields {
+  min-width: 0;
+}
+
+.page-shell img,
+.main img,
+.card img {
+  max-width: 100%;
+  height: auto;
+}
+
+/* Tablet: preserve two-column detail structures where there is room. */
+@media (min-width: 761px) and (max-width: 1100px) {
+  .detail-grid,
+  .lead-detail-layout,
+  .organisation-detail-grid,
+  .lead-details-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .research-form-grid,
+  .organisation-form-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .page-header {
+    gap: 16px;
+  }
+}
+
+/* Mobile: compact without making controls too small to tap. */
+@media (max-width: 760px) {
+  .command-bar {
+    padding: 13px;
+  }
+
+  .section-heading h2 {
+    font-size: 16px;
+  }
+
+  .approval-card {
+    padding: 14px;
+  }
+
+  .approval-actions-row {
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+
+  .approval-actions-row form {
+    flex: 1 1 150px;
+  }
+
+  .approval-actions-row .primary-button,
+  .approval-actions-row .ghost-button {
+    width: 100%;
+  }
+
+  .settings-section {
+    padding: 15px;
+  }
+
+  .table-card {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+}
+
+@media (max-width: 440px) {
+  .page-shell,
+  .main {
+    overflow-x: hidden;
+  }
+
+  .metric-card.featured,
+  .aria-card,
+  .settings-note {
+    padding: 14px;
+  }
+
+  .attention-row {
+    padding-left: 8px;
+    padding-right: 8px;
+  }
+}
