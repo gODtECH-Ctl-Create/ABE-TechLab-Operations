@@ -1,0 +1,207 @@
+/* Shared cross-workspace consistency layer. Keep additive: do not redefine foundation layout. */
+:root {
+  --ui-control-h: 40px;
+  --ui-control-h-sm: 36px;
+  --ui-radius: 10px;
+  --ui-radius-card: 14px;
+  --ui-gap: 12px;
+}
+
+.page-header,
+.header {
+  width: 100%;
+}
+
+.page-header > div:first-child,
+.header > div:first-child,
+.section-heading > div:first-child {
+  min-width: 0;
+}
+
+.page-header h1,
+.header h1 {
+  overflow-wrap: anywhere;
+}
+
+.page-header p,
+.header-subtitle,
+.section-heading p,
+.section-copy {
+  overflow-wrap: anywhere;
+}
+
+.ghost-button,
+.secondary-button,
+.primary-button {
+  min-height: var(--ui-control-h);
+  border-radius: var(--ui-radius);
+  font-size: 12px;
+  line-height: 1.2;
+}
+
+.ghost-button,
+.secondary-button {
+  padding: 9px 12px;
+}
+
+.primary-button {
+  padding: 10px 14px;
+}
+
+.card,
+.metric-card,
+.summary-card,
+.table-card {
+  border-radius: var(--ui-radius-card);
+}
+
+.section-heading {
+  margin-bottom: 15px;
+}
+
+.summary-card,
+.metric-card {
+  min-width: 0;
+}
+
+.badge,
+.status-chip,
+.score-pill {
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.organisation-row,
+.compact-row,
+.activity-item,
+.provider-row,
+.approval-item {
+  min-width: 0;
+}
+
+.organisation-main,
+.approval-item-main,
+.provider-row > div:first-child {
+  min-width: 0;
+}
+
+.organisation-main strong,
+.organisation-main span,
+.organisation-main small,
+.approval-item-main h3,
+.approval-item-main p {
+  overflow-wrap: anywhere;
+}
+
+.table-card {
+  max-width: 100%;
+}
+
+.table-card table {
+  border-collapse: separate;
+  border-spacing: 0;
+}
+
+.table-card th {
+  color: #737a83;
+  font-size: 9px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: .08em;
+}
+
+.table-card td {
+  color: #343a41;
+  font-size: 11px;
+  line-height: 1.5;
+}
+
+.empty-stage a,
+.empty-stage .primary-button,
+.empty-stage .secondary-button,
+.empty-stage .ghost-button {
+  margin-top: 4px;
+}
+
+.research-form button,
+.organisation-form button {
+  justify-self: start;
+}
+
+input,
+select,
+textarea {
+  border-radius: var(--ui-radius);
+}
+
+.record-item {
+  position: relative;
+}
+
+@media (max-width: 760px) {
+  .page-header,
+  .header {
+    gap: 14px;
+    margin-bottom: 16px;
+  }
+
+  .page-header h1,
+  .header h1 {
+    font-size: 28px;
+  }
+
+  .page-header p,
+  .header-subtitle {
+    font-size: 11px;
+    line-height: 1.55;
+  }
+
+  .header-actions {
+    gap: 8px;
+  }
+
+  .ghost-button,
+  .secondary-button,
+  .primary-button {
+    min-height: var(--ui-control-h-sm);
+    font-size: 11px;
+  }
+
+  .card,
+  .metric-card,
+  .summary-card,
+  .table-card {
+    border-radius: 12px;
+  }
+
+  .section-heading {
+    gap: 8px;
+    margin-bottom: 12px;
+  }
+
+  .summary-card,
+  .metric-card {
+    min-height: 92px;
+  }
+}
+
+@media (max-width: 440px) {
+  .page-header h1,
+  .header h1 {
+    font-size: 25px;
+  }
+
+  .card,
+  .metric-card,
+  .summary-card,
+  .table-card {
+    padding: 14px;
+  }
+
+  .ghost-button,
+  .secondary-button,
+  .primary-button {
+    width: 100%;
+  }
+}
