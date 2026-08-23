@@ -1,0 +1,29 @@
+.pipeline-card .lead-card.record-item{padding:14px 14px 12px;gap:7px;min-height:0}
+.pipeline-card .lead-card.record-item .lead-score{font-size:12px;line-height:1;font-weight:700;letter-spacing:.02em;margin-bottom:1px}
+.pipeline-card .lead-card.record-item h3{font-size:15px;line-height:1.25;margin:0 24px 0 0}
+.pipeline-card .lead-card.record-item h3 .text-link{font-size:inherit;line-height:inherit}
+.pipeline-card .lead-card.record-item>p{font-size:12px;line-height:1.35;margin:0;color:var(--muted,#68707d);font-weight:600}
+.pipeline-card .lead-card.record-item>small{font-size:11px;line-height:1.35;color:var(--muted,#68707d);white-space:normal}
+.pipeline-card .lead-card.record-item .recommended{display:grid;grid-template-columns:64px minmax(0,1fr);gap:8px;padding:7px 0 0;margin-top:2px;border-top:1px solid rgba(15,23,42,.07)}
+.pipeline-card .lead-card.record-item .recommended strong{font-size:10px;line-height:1.3;text-transform:uppercase;letter-spacing:.05em;color:var(--muted,#68707d)}
+.pipeline-card .lead-card.record-item .recommended span{font-size:11px;line-height:1.35;min-width:0;overflow-wrap:anywhere}
+.pipeline-card .lead-card.record-item .status-chip{font-size:10px;line-height:1.2;padding:4px 7px;display:inline-flex;max-width:100%;white-space:normal}
+.pipeline-card .lead-card.record-item>.text-link{font-size:11px;margin-top:2px}
+.pipeline-card .lead-card.record-item .status-form{display:flex;align-items:center;gap:7px;padding-top:8px;margin-top:2px;border-top:1px solid rgba(15,23,42,.07)}
+.pipeline-card .lead-card.record-item .status-form select{min-width:0;flex:1;height:32px;font-size:11px;padding:0 8px}
+.pipeline-card .lead-card.record-item .status-form .text-link{font-size:10px;white-space:nowrap}
+
+@media (max-width: 760px){
+  .pipeline-card .lead-card.record-item{padding:12px 12px 10px}
+  .pipeline-card .lead-card.record-item h3{font-size:14px}
+  .pipeline-card .lead-card.record-item .recommended{grid-template-columns:58px minmax(0,1fr);gap:7px}
+}
+
+@media (max-width: 440px){
+  .pipeline-card .lead-card.record-item{padding:11px 11px 9px;gap:6px}
+  .pipeline-card .lead-card.record-item h3{font-size:13px}
+  .pipeline-card .lead-card.record-item>p,.pipeline-card .lead-card.record-item>small{font-size:10.5px}
+  .pipeline-card .lead-card.record-item .recommended strong,.pipeline-card .lead-card.record-item .recommended span{font-size:10px}
+  .pipeline-card .lead-card.record-item .status-form{gap:6px}
+  .pipeline-card .lead-card.record-item .status-form select{height:30px}
+}
