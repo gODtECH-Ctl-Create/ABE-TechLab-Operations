@@ -19,6 +19,11 @@ async function requireEditor() {
   return { supabase, user };
 }
 
+function normalizeWebsite(value: string | null) {
+  if (!value) return null;
+  return value.toLowerCase().trim().replace(/^https?:\/\/(www\.)?/, "").replace(/\/$/, "");
+}
+
 export async function createOrganisation(formData: FormData) {
   const { supabase, user } = await requireEditor();
   const name = String(formData.get("name") ?? "").trim();
@@ -27,6 +32,20 @@ export async function createOrganisation(formData: FormData) {
   const websiteUrl = String(formData.get("website_url") ?? "").trim() || null;
   if (!name) redirect("/organisations?error=name_required");
 
+  const { data: nameMatch } = await (supabase.from("organisations") as any)
+    .select("id,name,website_url")
+    .ilike("name", name)
+    .limit(1)
+    .maybeSingle();
+  if (nameMatch) redirect(`/organisations?error=duplicate_organisation&match=${encodeURIComponent(nameMatch.name)}`);
+
+  if (websiteUrl) {
+    const normalized = normalizeWebsite(websiteUrl);
+    const { data: orgRows } = await (supabase.from("organisations") as any).select("id,name,website_url").not("website_url", "is", null).limit(500);
+    const websiteMatch = (orgRows ?? []).find((row: { website_url: string | null }) => normalizeWebsite(row.website_url) === normalized);
+    if (websiteMatch) redirect(`/organisations?error=duplicate_website&match=${encodeURIComponent(websiteMatch.name)}`);
+  }
+
   const organisationPayload: OrganisationInsert = { name, industry, geography, website_url: websiteUrl };
   const { data, error } = await supabase.from("organisations").insert(organisationPayload as never).select("id").single();
   if (error || !data) redirect(`/organisations?error=${encodeURIComponent(error?.message ?? "organisation_create_failed")}`);
@@ -34,7 +53,7 @@ export async function createOrganisation(formData: FormData) {
 
   const auditPayload: AuditInsert = {
     actor_type: "user", actor_id: user.id, action: "organisation_created", entity_type: "organisation", entity_id: organisation.id,
-    metadata: { source: "manual" },
+    metadata: { source: "manual", duplicate_check: "passed" },
   };
   await supabase.from("audit_events").insert(auditPayload as never);
   revalidatePath("/organisations");
@@ -50,6 +69,21 @@ export async function updateOrganisation(formData: FormData) {
   const geography = String(formData.get("geography") ?? "").trim() || null;
   const websiteUrl = String(formData.get("website_url") ?? "").trim() || null;
   if (!id || !name) redirect("/organisations?error=invalid_organisation");
+
+  const { data: duplicateName } = await (supabase.from("organisations") as any)
+    .select("id,name")
+    .ilike("name", name)
+    .neq("id", id)
+    .limit(1)
+    .maybeSingle();
+  if (duplicateName) redirect(`/organisations/${id}?error=duplicate_organisation&match=${encodeURIComponent(duplicateName.name)}`);
+
+  if (websiteUrl) {
+    const normalized = normalizeWebsite(websiteUrl);
+    const { data: orgRows } = await (supabase.from("organisations") as any).select("id,name,website_url").neq("id", id).not("website_url", "is", null).limit(500);
+    const websiteMatch = (orgRows ?? []).find((row: { website_url: string | null }) => normalizeWebsite(row.website_url) === normalized);
+    if (websiteMatch) redirect(`/organisations/${id}?error=duplicate_website&match=${encodeURIComponent(websiteMatch.name)}`);
+  }
 
   const updatePayload: OrganisationUpdate = { name, industry, geography, website_url: websiteUrl };
   const { error } = await supabase.from("organisations").update(updatePayload as never).eq("id", id);
