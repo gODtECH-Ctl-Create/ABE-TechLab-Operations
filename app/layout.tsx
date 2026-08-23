@@ -17,6 +17,7 @@ import "./dashboard-density.css";
 import "./leads-density.css";
 import "./opportunity-density.css";
 import "./organisations/organisation-density.css";
+import "./contacts/contact-density.css";
 
 export const metadata: Metadata = {
   title: "ABE TechLab Operations",
