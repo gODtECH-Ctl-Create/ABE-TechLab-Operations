@@ -15,13 +15,12 @@ const items = [
   { href: "/prospecting", label: "Research" },
   { href: "/contacts", label: "Contacts" },
   { href: "/organisations", label: "Organisations" },
-  { href: "/profile", label: "Profile" },
-  { href: "/settings", label: "Settings" },
 ];
 
 export function OperationsNav() {
   const pathname = usePathname();
   const [signingOut, setSigningOut] = useState(false);
+  const [profileOpen, setProfileOpen] = useState(false);
   const hidden = ["/login", "/signup", "/reset-password", "/auth"].some((prefix) => pathname.startsWith(prefix));
   if (hidden) return null;
 
@@ -44,7 +43,29 @@ export function OperationsNav() {
           return <Link key={item.href} href={item.href} className={active ? "operations-nav-link active" : "operations-nav-link"} aria-current={active ? "page" : undefined}>{item.label}</Link>;
         })}
       </div>
-      <button className="operations-nav-signout" type="button" onClick={handleSignOut} disabled={signingOut} aria-label="Sign out of ABE TechLab Operations">{signingOut ? "Signing out…" : "Sign out"}</button>
+      <div className="operations-nav-tools">
+        <Link href="/notifications" className="operations-nav-icon" aria-label="Notifications" title="Notifications">
+          <span aria-hidden="true">♢</span>
+          <span className="operations-nav-notification-dot" aria-hidden="true" />
+        </Link>
+        <div className="operations-nav-profile-wrap">
+          <button className="operations-nav-avatar" type="button" aria-label="Open profile menu" aria-expanded={profileOpen} onClick={() => setProfileOpen((open) => !open)}>A</button>
+          {profileOpen && (
+            <div className="operations-profile-popover" role="dialog" aria-label="Profile menu">
+              <div className="operations-profile-identity">
+                <div className="operations-profile-avatar-large">A</div>
+                <div><strong>My profile</strong><span>ABE TechLab Operations</span></div>
+              </div>
+              <div className="operations-profile-links">
+                <Link href="/profile" onClick={() => setProfileOpen(false)}><strong>Profile</strong><span>Personal details and access context</span></Link>
+                <Link href="/settings" onClick={() => setProfileOpen(false)}><strong>Settings</strong><span>Workspace, team, security and integrations</span></Link>
+                <Link href="/settings/notifications" onClick={() => setProfileOpen(false)}><strong>Notification preferences</strong><span>Choose which operational events alert you</span></Link>
+              </div>
+              <button className="operations-profile-signout" type="button" onClick={handleSignOut} disabled={signingOut}>{signingOut ? "Signing out…" : "Sign out"}</button>
+            </div>
+          )}
+        </div>
+      </div>
     </nav>
   );
 }
