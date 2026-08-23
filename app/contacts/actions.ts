@@ -21,7 +21,11 @@ export async function createContact(formData: FormData) {
 
   const email = String(formData.get("email") ?? "").trim().toLowerCase() || null;
   if (email) {
-    const { data: duplicate } = await (supabase.from("contacts") as any).select("id").eq("email", email).is("deleted_at", null).maybeSingle();
+    const { data: duplicate } = await (supabase.from("contacts") as any)
+      .select("id")
+      .eq("email", email)
+      .is("deleted_at", null)
+      .maybeSingle();
     if (duplicate) redirect("/contacts?error=duplicate_email");
   }
 
@@ -36,7 +40,8 @@ export async function createContact(formData: FormData) {
     notes: String(formData.get("notes") ?? "").trim() || null,
   };
 
-  const { data, error } = await (supabase.from("contacts") as never).insert(payload as never).select("id").single();
+  const contactsTable = supabase.from("contacts" as never) as any;
+  const { data, error } = await contactsTable.insert(payload).select("id").single();
   if (error || !data) redirect(`/contacts?error=${encodeURIComponent(error?.message ?? "contact_create_failed")}`);
 
   await supabase.from("audit_events").insert({
@@ -58,10 +63,26 @@ export async function trashContact(formData: FormData) {
   const id = String(formData.get("id") ?? "").trim();
   const reason = String(formData.get("reason") ?? "").trim() || "Removed from active workspace";
   if (!id) redirect("/contacts?error=invalid_contact");
-  const { error } = await (supabase.from("contacts") as any).update({ deleted_at: new Date().toISOString(), deleted_by: user.id, deletion_reason: reason }).eq("id", id).is("deleted_at", null);
+
+  const contactsTable = supabase.from("contacts" as never) as any;
+  const { error } = await contactsTable
+    .update({ deleted_at: new Date().toISOString(), deleted_by: user.id, deletion_reason: reason })
+    .eq("id", id)
+    .is("deleted_at", null);
   if (error) redirect(`/contacts?error=${encodeURIComponent(error.message)}`);
-  await (supabase.from("deleted_records") as any).upsert({ entity_type: "contact", entity_id: id, deleted_by: user.id, reason }, { onConflict: "entity_type,entity_id" });
-  await (supabase.from("audit_events") as any).insert({ actor_type: "human", actor_id: user.id, action: "contact.trashed", entity_type: "contact", entity_id: id, metadata: { reason } });
+
+  await (supabase.from("deleted_records") as any).upsert(
+    { entity_type: "contact", entity_id: id, deleted_by: user.id, reason },
+    { onConflict: "entity_type,entity_id" },
+  );
+  await (supabase.from("audit_events") as any).insert({
+    actor_type: "human",
+    actor_id: user.id,
+    action: "contact.trashed",
+    entity_type: "contact",
+    entity_id: id,
+    metadata: { reason },
+  });
   revalidatePath("/contacts");
   revalidatePath("/trash");
   redirect("/contacts?trashed=1");
