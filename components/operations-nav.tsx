@@ -61,6 +61,7 @@ export function OperationsNav() {
                 <Link href="/profile/about" onClick={() => setProfileOpen(false)}><strong>About Operations</strong><span>Learn how the workspace works and why it exists</span></Link>
                 <Link href="/settings" onClick={() => setProfileOpen(false)}><strong>Settings</strong><span>Workspace, team, security and integrations</span></Link>
                 <Link href="/settings/notifications" onClick={() => setProfileOpen(false)}><strong>Notification preferences</strong><span>Choose which operational events alert you</span></Link>
+                <Link href="/trash" onClick={() => setProfileOpen(false)}><strong>Trash</strong><span>Recover records removed from the active workspace</span></Link>
               </div>
               <button className="operations-profile-signout" type="button" onClick={handleSignOut} disabled={signingOut}>{signingOut ? "Signing out…" : "Sign out"}</button>
             </div>
