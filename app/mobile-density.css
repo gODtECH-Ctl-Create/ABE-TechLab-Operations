@@ -1,0 +1,218 @@
+/* Mobile density layer. Keep this isolated from the base design system. */
+@media (max-width: 760px) {
+  .page-shell {
+    padding: 18px 14px 28px;
+  }
+
+  .page-header {
+    gap: 12px;
+    margin-bottom: 16px;
+  }
+
+  .page-header h1,
+  .header h1 {
+    font-size: clamp(24px, 7vw, 32px);
+    line-height: 1.12;
+  }
+
+  .page-header p,
+  .header-subtitle {
+    font-size: 12px;
+    line-height: 1.55;
+  }
+
+  .header-actions {
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+
+  .primary-button,
+  .ghost-button,
+  button.text-link,
+  .status-form button,
+  .status-form select {
+    min-height: 38px;
+    font-size: 11px;
+  }
+
+  .primary-button,
+  .ghost-button {
+    padding: 8px 12px;
+  }
+
+  .lead-summary {
+    gap: 8px;
+    margin-bottom: 12px;
+  }
+
+  .summary-card,
+  .metric-card {
+    padding: 12px;
+  }
+
+  .summary-card > strong,
+  .metric-value {
+    margin-top: 6px;
+    font-size: 18px;
+  }
+
+  .summary-card > span,
+  .metric-label {
+    font-size: 10px;
+  }
+
+  .card,
+  .table-card {
+    padding: 14px;
+    border-radius: 14px;
+  }
+
+  .section-heading {
+    gap: 10px;
+    margin-bottom: 12px;
+  }
+
+  .section-heading h2 {
+    font-size: 17px;
+    line-height: 1.25;
+  }
+
+  .section-heading p,
+  .section-copy {
+    font-size: 11px;
+    line-height: 1.55;
+  }
+
+  .research-form,
+  .organisation-form {
+    gap: 13px;
+  }
+
+  .research-form-grid,
+  .organisation-form-grid {
+    gap: 10px;
+  }
+
+  input,
+  select,
+  textarea {
+    font-size: 12px;
+  }
+
+  textarea {
+    min-height: 92px;
+  }
+
+  .organisation-row,
+  .compact-row,
+  .approval-item,
+  .provider-row {
+    padding: 12px 0;
+  }
+
+  .organisation-row {
+    gap: 10px;
+  }
+
+  .organisation-main strong {
+    font-size: 12px;
+    line-height: 1.35;
+  }
+
+  .organisation-main span,
+  .organisation-main small {
+    font-size: 10px;
+    line-height: 1.45;
+  }
+
+  .organisation-meta b {
+    font-size: 11px;
+  }
+
+  .organisation-meta small {
+    font-size: 9px;
+  }
+
+  .pipeline-column {
+    min-width: min(82vw, 290px);
+  }
+
+  .lead-card {
+    padding: 12px;
+    gap: 8px;
+    margin-top: 8px;
+    border-radius: 11px;
+  }
+
+  .lead-card h3 {
+    font-size: 13px;
+  }
+
+  .lead-card p {
+    font-size: 11px;
+  }
+
+  .lead-card small {
+    font-size: 9px;
+  }
+
+  .recommended,
+  .detail-fields > div,
+  .detail-list > div {
+    padding: 10px 11px;
+  }
+
+  .detail-fields strong,
+  .detail-list dd,
+  .recommended span {
+    font-size: 11px;
+  }
+
+  .detail-fields span,
+  .detail-list dt,
+  .recommended strong {
+    font-size: 8px;
+  }
+
+  .activity-item {
+    padding: 11px 0;
+  }
+
+  .record-overflow-menu {
+    z-index: 30;
+  }
+}
+
+@media (max-width: 440px) {
+  .page-shell {
+    padding-inline: 11px;
+  }
+
+  .page-header h1,
+  .header h1 {
+    font-size: 24px;
+  }
+
+  .card,
+  .table-card {
+    padding: 12px;
+  }
+
+  .lead-summary {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .summary-card > strong,
+  .metric-value {
+    font-size: 17px;
+  }
+
+  .header-actions .ghost-button,
+  .header-actions .primary-button {
+    padding: 7px 10px;
+  }
+
+  .pipeline-column {
+    min-width: 84vw;
+  }
+}
