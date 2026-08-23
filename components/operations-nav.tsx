@@ -58,6 +58,7 @@ export function OperationsNav() {
               </div>
               <div className="operations-profile-links">
                 <Link href="/profile" onClick={() => setProfileOpen(false)}><strong>Profile</strong><span>Personal details and access context</span></Link>
+                <Link href="/profile/about" onClick={() => setProfileOpen(false)}><strong>About Operations</strong><span>Learn how the workspace works and why it exists</span></Link>
                 <Link href="/settings" onClick={() => setProfileOpen(false)}><strong>Settings</strong><span>Workspace, team, security and integrations</span></Link>
                 <Link href="/settings/notifications" onClick={() => setProfileOpen(false)}><strong>Notification preferences</strong><span>Choose which operational events alert you</span></Link>
               </div>
