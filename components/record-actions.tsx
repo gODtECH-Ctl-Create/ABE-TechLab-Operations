@@ -1,6 +1,4 @@
-import type { RecordEntity } from "./record-actions-types";
-
-export type { RecordEntity } from "./record-actions-types";
+export type RecordEntity = "organisation" | "lead" | "opportunity" | "contact";
 
 /**
  * Legacy compatibility shim. The workspace now uses the canonical
