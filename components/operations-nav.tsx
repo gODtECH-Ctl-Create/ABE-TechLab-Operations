@@ -15,7 +15,8 @@ const items = [
   { href: "/prospecting", label: "Research" },
   { href: "/contacts", label: "Contacts" },
   { href: "/organisations", label: "Organisations" },
-  { href: "/ai", label: "AI Control Centre" },
+  { href: "/profile", label: "Profile" },
+  { href: "/settings", label: "Settings" },
 ];
 
 export function OperationsNav() {
