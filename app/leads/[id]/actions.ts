@@ -2,12 +2,11 @@
 
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
+import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { getLeadStageRule, type LeadStage } from "@/lib/workflow/stage-rules";
 import type { Database } from "@/lib/data/supabase/database.types";
 
-const allowedStatuses = [
-  "new","researching","qualified","outreach_ready","contacted","engaged","opportunity","won","lost","nurture",
-] as const;
+const allowedStatuses = ["new","researching","qualified","outreach_ready","contacted","engaged","opportunity","won","lost","nurture"] as const;
 
 type LeadUpdate = Database["public"]["Tables"]["leads"]["Update"];
 type LeadRow = Database["public"]["Tables"]["leads"]["Row"];
@@ -35,9 +34,7 @@ function validateStageTransition(current: LeadRow, target: LeadStage) {
 }
 
 async function getCurrentLead(supabase: Awaited<ReturnType<typeof createSupabaseServerClient>>, leadId: string) {
-  const { data, error } = await (supabase.from("leads") as any)
-    .select("id, organisation_id, prospect_id, status, service_interest, problem_summary, score, source, owner_id, next_action, next_action_due_at, created_at, updated_at, deleted_at")
-    .eq("id", leadId).single();
+  const { data, error } = await (supabase.from("leads") as any).select("id, organisation_id, prospect_id, status, service_interest, problem_summary, score, source, owner_id, next_action, next_action_due_at, created_at, updated_at, deleted_at").eq("id", leadId).single();
   if (error || !data) redirect(`/leads/${leadId}?error=lead_not_found`);
   return data as LeadRow;
 }
@@ -64,7 +61,7 @@ export async function updateLead(formData: FormData) {
   const payload: LeadUpdate = { service_interest: serviceInterest, problem_summary: problemSummary, score, status, owner_id: ownerId, next_action: nextAction, next_action_due_at: nextActionDueAt };
   const { error } = await (supabase.from("leads") as any).update(payload).eq("id", leadId);
   if (error) redirect(`/leads/${leadId}?error=${encodeURIComponent(error.message)}`);
-  await (supabase.from("audit_events") as any).insert({ actor_type:"user", actor_id:user.id, action:"lead_updated", entity_type:"lead", entity_id:leadId, metadata:payload });
+  await (supabase.from("audit_events") as any).insert({ actor_type:"user", actor_id:user.id, action:"lead_updated", entity_type:"lead", entity_id:leadId, metadata:payload } as never);
   revalidatePath(`/leads/${leadId}`); revalidatePath("/leads"); revalidatePath("/");
   redirect(`/leads/${leadId}?updated=1`);
 }
@@ -77,7 +74,7 @@ export async function trashLead(formData: FormData) {
   const { error } = await (supabase.from("leads") as any).update({ deleted_at:new Date().toISOString(), deleted_by:user.id, deletion_reason:reason }).eq("id", id).is("deleted_at", null);
   if (error) redirect(`/leads/${id}?error=${encodeURIComponent(error.message)}`);
   await (supabase.from("deleted_records") as any).upsert({ entity_type:"lead", entity_id:id, deleted_by:user.id, reason }, { onConflict:"entity_type,entity_id" });
-  await (supabase.from("audit_events") as any).insert({ actor_type:"user", actor_id:user.id, action:"lead.trashed", entity_type:"lead", entity_id:id, metadata:{ reason } });
+  await (supabase.from("audit_events") as any).insert({ actor_type:"user", actor_id:user.id, action:"lead.trashed", entity_type:"lead", entity_id:id, metadata:{ reason } } as never);
   revalidatePath(`/leads/${id}`); revalidatePath("/leads"); revalidatePath("/trash"); revalidatePath("/");
   redirect("/leads?trashed=1");
 }
