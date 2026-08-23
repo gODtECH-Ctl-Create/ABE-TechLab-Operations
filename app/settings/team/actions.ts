@@ -6,6 +6,13 @@ import { createSupabaseServerClient } from "@/lib/supabase/server";
 
 const roles = ["admin", "operator", "reviewer"] as const;
 
+type AdminSetRoleRpc = (client: Awaited<ReturnType<typeof createSupabaseServerClient>>, args: { target_user_id: string; target_role: string }) => Promise<{ error: { message: string } | null }>;
+
+async function callAdminSetUserRole(client: Awaited<ReturnType<typeof createSupabaseServerClient>>, args: { target_user_id: string; target_role: string }) {
+  const rpc = client.rpc as unknown as AdminSetRoleRpc;
+  return rpc(client, args);
+}
+
 export async function changeMemberRole(formData: FormData) {
   const supabase = await createSupabaseServerClient();
   const { data: { user } } = await supabase.auth.getUser();
@@ -18,7 +25,7 @@ export async function changeMemberRole(formData: FormData) {
   if (!userId || !roles.includes(nextRole as (typeof roles)[number])) redirect("/settings/team?error=invalid_role");
   if (userId === user.id && nextRole !== "admin") redirect("/settings/team?error=last_admin_protection");
 
-  const { error } = await (supabase.rpc("admin_set_user_role", { target_user_id: userId, target_role: nextRole }) as any);
+  const { error } = await callAdminSetUserRole(supabase, { target_user_id: userId, target_role: nextRole });
   if (error) redirect(`/settings/team?error=${encodeURIComponent(error.message)}`);
 
   revalidatePath("/settings/team");
