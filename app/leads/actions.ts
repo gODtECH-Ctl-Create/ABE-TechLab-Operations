@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
+import { getLeadStageRule, type LeadStage } from "@/lib/workflow/stage-rules";
 import type { Database } from "@/lib/data/supabase/database.types";
 
 const allowedStatuses = [
@@ -19,8 +20,53 @@ const allowedStatuses = [
 ] as const;
 
 type LeadInsert = Database["public"]["Tables"]["leads"]["Insert"];
-
 type AuditInsert = Database["public"]["Tables"]["audit_events"]["Insert"];
+
+type LeadRow = Database["public"]["Tables"]["leads"]["Row"];
+
+const stageOrder: LeadStage[] = [
+  "new",
+  "researching",
+  "qualified",
+  "outreach_ready",
+  "contacted",
+  "engaged",
+  "opportunity",
+  "won",
+];
+
+function validateStageTransition(current: LeadRow, target: LeadStage) {
+  const rule = getLeadStageRule(target);
+  if (!rule) return "invalid_status";
+
+  if (target === current.status) return null;
+
+  if (target === "researching" && !current.service_interest && !current.problem_summary) {
+    return "research_required_before_researching";
+  }
+
+  if (target === "qualified" && (current.score === null || current.score < 1)) {
+    return "score_required_before_qualification";
+  }
+
+  if (target === "outreach_ready" && (!current.service_interest || !current.problem_summary)) {
+    return "service_and_problem_required_before_outreach";
+  }
+
+  if (target === "opportunity" && !current.service_interest) {
+    return "service_required_before_opportunity";
+  }
+
+  if (target === "won" && current.status !== "opportunity" && current.status !== "engaged") {
+    return "opportunity_required_before_won";
+  }
+
+  if (target === "lost" && ![...stageOrder, "nurture"].includes(current.status as LeadStage)) {
+    return "invalid_loss_transition";
+  }
+
+  return null;
+}
 
 export async function createLead(formData: FormData) {
   const supabase = await createSupabaseServerClient();
@@ -61,7 +107,7 @@ export async function createLead(formData: FormData) {
     action: "lead_created",
     entity_type: "lead",
     entity_id: lead.id,
-    metadata: { source: "manual" },
+    metadata: { source: "manual", stage: "new" },
   };
   await (supabase.from("audit_events") as any).insert(auditPayload);
 
@@ -82,6 +128,16 @@ export async function updateLeadStatus(formData: FormData) {
   const { data: role } = await supabase.rpc("get_my_role" as never);
   if (!["admin", "operator"].includes(String(role))) redirect("/leads?error=not_authorized");
 
+  const { data: current, error: loadError } = await (supabase.from("leads") as any)
+    .select("id, organisation_id, prospect_id, status, service_interest, problem_summary, score, source, created_at, updated_at")
+    .eq("id", leadId)
+    .single();
+
+  if (loadError || !current) redirect(`/leads?error=${encodeURIComponent(loadError?.message ?? "lead_not_found")}`);
+
+  const validationError = validateStageTransition(current as LeadRow, status as LeadStage);
+  if (validationError) redirect(`/leads?error=${validationError}`);
+
   const { error } = await (supabase.from("leads") as any).update({ status }).eq("id", leadId);
   if (error) redirect(`/leads?error=${encodeURIComponent(error.message)}`);
 
@@ -91,11 +147,12 @@ export async function updateLeadStatus(formData: FormData) {
     action: "lead_status_updated",
     entity_type: "lead",
     entity_id: leadId,
-    metadata: { status },
+    metadata: { from_status: current.status, status, stage_rule: getLeadStageRule(status) },
   };
   await (supabase.from("audit_events") as any).insert(auditPayload);
 
   revalidatePath("/leads");
+  revalidatePath(`/leads/${leadId}`);
   revalidatePath("/");
   redirect("/leads?updated=1");
 }
