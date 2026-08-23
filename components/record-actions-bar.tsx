@@ -11,7 +11,6 @@ const detailRoutes = [
 ] as const;
 
 type Entity = (typeof detailRoutes)[number][1];
-
 type MenuAction = "archive" | "trash";
 
 export function RecordActionsBar() {
@@ -21,22 +20,13 @@ export function RecordActionsBar() {
   const [message, setMessage] = useState("");
   const menuRef = useRef<HTMLDivElement | null>(null);
 
-  const match = detailRoutes.find(([prefix]) => pathname.startsWith(prefix));
-  if (!match) return null;
-
-  const [prefix, entity] = match;
-  const id = pathname.slice(prefix.length).split("/")[0];
-  if (!id) return null;
-
   useEffect(() => {
     function handlePointerDown(event: MouseEvent) {
       if (!menuRef.current?.contains(event.target as Node)) setOpen(false);
     }
-
     function handleKeyDown(event: KeyboardEvent) {
       if (event.key === "Escape") setOpen(false);
     }
-
     document.addEventListener("mousedown", handlePointerDown);
     document.addEventListener("keydown", handleKeyDown);
     return () => {
@@ -44,6 +34,13 @@ export function RecordActionsBar() {
       document.removeEventListener("keydown", handleKeyDown);
     };
   }, []);
+
+  const match = detailRoutes.find(([prefix]) => pathname.startsWith(prefix));
+  if (!match) return null;
+
+  const [prefix, entity] = match;
+  const id = pathname.slice(prefix.length).split("/")[0];
+  if (!id) return null;
 
   function edit() {
     setMessage("");
@@ -67,7 +64,7 @@ export function RecordActionsBar() {
         setMessage("Link copied");
       }
     } catch {
-      // User cancelled the native share sheet.
+      // User cancelled native sharing.
     } finally {
       setOpen(false);
     }
@@ -105,7 +102,6 @@ export function RecordActionsBar() {
       >
         <span aria-hidden="true">•••</span>
       </button>
-
       {open && (
         <div className="record-actions-menu" role="menu" aria-label="Record actions">
           <button type="button" role="menuitem" onClick={edit}>Edit</button>
@@ -124,7 +120,6 @@ export function RecordActionsBar() {
           </button>
         </div>
       )}
-
       {message && <span className="record-actions-menu-message" role="status">{message}</span>}
     </div>
   );
