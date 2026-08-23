@@ -3,6 +3,7 @@ import { SpeedInsights } from "@vercel/speed-insights/next";
 import { OperationsNav } from "@/components/operations-nav";
 import "./globals.css";
 import "./design-system.css";
+import "./ui-consistency.css";
 import "./navigation.css";
 import "../components/operations-nav.css";
 import "../components/record-actions-menu.css";
