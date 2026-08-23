@@ -45,7 +45,7 @@ export function OperationsNav() {
       </div>
       <div className="operations-nav-tools">
         <Link href="/notifications" className="operations-nav-icon" aria-label="Notifications" title="Notifications">
-          <span aria-hidden="true">♢</span>
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M18 9a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9M10 21h4" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" /></svg>
           <span className="operations-nav-notification-dot" aria-hidden="true" />
         </Link>
         <div className="operations-nav-profile-wrap">
