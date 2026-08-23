@@ -13,6 +13,7 @@ import "./organisations/organisation.css";
 import "./approval/approval.css";
 import "./approval/approval-polish.css";
 import "./settings/settings.css";
+import "./dashboard-density.css";
 
 export const metadata: Metadata = {
   title: "ABE TechLab Operations",
