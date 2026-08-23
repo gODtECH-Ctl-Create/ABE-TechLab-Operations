@@ -8,9 +8,7 @@ type Lead = Database["public"]["Tables"]["leads"]["Row"];
 type Opportunity = Database["public"]["Tables"]["opportunities"]["Row"];
 type Organisation = Database["public"]["Tables"]["organisations"]["Row"];
 
-function badgeClass(health: RecordHealth) {
-  return health === "overdue" || health === "needs_action" ? "attention-badge danger" : health === "stale" || health === "unassigned" ? "attention-badge warning" : "attention-badge";
-}
+function badgeClass(health: RecordHealth) { return health === "overdue" || health === "needs_action" ? "attention-badge danger" : health === "stale" || health === "unassigned" ? "attention-badge warning" : "attention-badge"; }
 
 export default async function AttentionPage() {
   const supabase = await createSupabaseServerClient();
