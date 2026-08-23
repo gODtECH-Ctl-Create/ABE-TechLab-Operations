@@ -5,6 +5,7 @@ import { RecordActionsBar } from "@/components/record-actions-bar";
 import "./globals.css";
 import "./navigation.css";
 import "../components/operations-nav.css";
+import "../components/record-actions-menu.css";
 import "./ui-polish.css";
 import "./operations-visual-system.css";
 import "./ui-final-polish.css";
