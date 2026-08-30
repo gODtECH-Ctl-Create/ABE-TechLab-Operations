@@ -4,6 +4,8 @@ import { createSupabaseServiceClient } from "@/lib/supabase/service";
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const MAX_MESSAGE_LENGTH = 5000;
 const MAX_TEXT_LENGTH = 200;
+const ALLOWED_CHANNELS = ["website_chat", "whatsapp", "voice_call", "email"] as const;
+type PreferredContactChannel = typeof ALLOWED_CHANNELS[number];
 
 function text(value: unknown, max = MAX_TEXT_LENGTH) {
   return String(value ?? "").trim().slice(0, max);
@@ -29,6 +31,10 @@ export async function POST(request: Request) {
     const need = text(body.need);
     const timeline = text(body.timeline);
     const message = text(body.message, MAX_MESSAGE_LENGTH);
+    const rawPreferredChannel = text(body.preferred_channel, 50);
+    const preferredChannel = (ALLOWED_CHANNELS as readonly string[]).includes(rawPreferredChannel)
+      ? rawPreferredChannel as PreferredContactChannel
+      : "website_chat";
 
     if (!payloadIntakeId || !name || !EMAIL_RE.test(email) || !need || !message) {
       return NextResponse.json({ error: "Invalid intake payload", request_id: requestId }, { status: 400 });
@@ -81,7 +87,15 @@ export async function POST(request: Request) {
     const problemSummary = [message, timeline ? `Timeline: ${timeline}` : ""].filter(Boolean).join("\n\n");
 
     const { data: lead, error: leadError } = await (supabase.from("leads") as any)
-      .insert({ organisation_id: organisationId, service_interest: need, problem_summary: problemSummary, status: "new", source: "website", score: null })
+      .insert({
+        organisation_id: organisationId,
+        service_interest: need,
+        problem_summary: problemSummary,
+        status: "new",
+        source: "website",
+        score: null,
+        preferred_contact_channel: preferredChannel,
+      })
       .select("id")
       .single();
 
@@ -96,13 +110,22 @@ export async function POST(request: Request) {
       action: "website_lead_intake",
       entity_type: "lead",
       entity_id: lead.id,
-      metadata: { intake_id: payloadIntakeId, source: "website", name, email, company: company || null, need, timeline: timeline || null },
+      metadata: {
+        intake_id: payloadIntakeId,
+        source: "website",
+        name,
+        email,
+        company: company || null,
+        need,
+        timeline: timeline || null,
+        preferred_channel: preferredChannel,
+      },
     });
 
     if (auditError) console.error("Website intake audit event failed", { requestId, intakeId: payloadIntakeId, leadId: lead.id, error: auditError });
 
-    console.info("Website intake accepted", { requestId, intakeId: payloadIntakeId, leadId: lead.id, organisationId });
-    return NextResponse.json({ ok: true, lead_id: lead.id, request_id: requestId });
+    console.info("Website intake accepted", { requestId, intakeId: payloadIntakeId, leadId: lead.id, organisationId, preferredChannel });
+    return NextResponse.json({ ok: true, lead_id: lead.id, request_id: requestId, preferred_channel: preferredChannel });
   } catch (error) {
     console.error("Website intake failed", { requestId, intakeId, error });
     return NextResponse.json({ error: "Unable to process website intake", request_id: requestId }, { status: 500 });
