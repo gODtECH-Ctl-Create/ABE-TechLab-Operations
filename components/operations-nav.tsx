@@ -11,6 +11,7 @@ const items = [
   { href: "/opportunities", label: "Opportunities" },
   { href: "/outreach", label: "Outreach" },
   { href: "/follow-ups", label: "Follow-ups" },
+  { href: "/assistant", label: "AI Assistant" },
   { href: "/approval", label: "Approval Queue" },
   { href: "/prospecting", label: "Research" },
   { href: "/contacts", label: "Contacts" },
