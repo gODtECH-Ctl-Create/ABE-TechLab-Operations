@@ -16,15 +16,15 @@ export default async function AssistantConversationPage({ params }: Props) {
   const db = supabase as any;
   const { data: conversation } = await db.from("assistant_conversations").select("id,lead_id,channel,status,ai_enabled,workflow_id,current_step_id,last_message_at,started_at").eq("id", id).maybeSingle();
   if (!conversation) notFound();
-  const [{ data: lead }, { data: messages }, { data: requirements }, { data: actions }, { data: workflow }, { data: step }, { data: org }] = await Promise.all([
-    db.from("leads").select("id,organisation_id,service_interest,problem_summary,preferred_contact_channel,status,score,source").eq("id", conversation.lead_id).single(),
-    db.from("assistant_messages").select("id,sender_type,content,message_type,created_at,metadata").eq("conversation_id", id).order("created_at", { ascending: true }).limit(100),
-    db.from("assistant_requirements").select("id,key,value,status,confidence,updated_at").eq("lead_id", conversation.lead_id).order("updated_at", { ascending: false }).limit(50),
-    db.from("assistant_actions").select("id,action_type,tool_name,status,created_at,error").eq("conversation_id", id).order("created_at", { ascending: false }).limit(30),
-    conversation.workflow_id ? db.from("assistant_workflows").select("id,name,service,description,version").eq("id", conversation.workflow_id).maybeSingle() : Promise.resolve({ data: null }),
-    conversation.current_step_id ? db.from("assistant_workflow_steps").select("id,name,description,step_order,step_type").eq("id", conversation.current_step_id).maybeSingle() : Promise.resolve({ data: null }),
-    lead?.organisation_id ? db.from("organisations").select("id,name").eq("id", lead.organisation_id).maybeSingle() : Promise.resolve({ data: null }),
-  ]);
+
+  const leadPromise = db.from("leads").select("id,organisation_id,service_interest,problem_summary,preferred_contact_channel,status,score,source").eq("id", conversation.lead_id).single();
+  const messagesPromise = db.from("assistant_messages").select("id,sender_type,content,message_type,created_at,metadata").eq("conversation_id", id).order("created_at", { ascending: true }).limit(100);
+  const requirementsPromise = db.from("assistant_requirements").select("id,key,value,status,confidence,updated_at").eq("lead_id", conversation.lead_id).order("updated_at", { ascending: false }).limit(50);
+  const actionsPromise = db.from("assistant_actions").select("id,action_type,tool_name,status,created_at,error").eq("conversation_id", id).order("created_at", { ascending: false }).limit(30);
+  const workflowPromise = conversation.workflow_id ? db.from("assistant_workflows").select("id,name,service,description,version").eq("id", conversation.workflow_id).maybeSingle() : Promise.resolve({ data: null });
+  const stepPromise = conversation.current_step_id ? db.from("assistant_workflow_steps").select("id,name,description,step_order,step_type").eq("id", conversation.current_step_id).maybeSingle() : Promise.resolve({ data: null });
+  const [{ data: lead }, { data: messages }, { data: requirements }, { data: actions }, { data: workflow }, { data: step }] = await Promise.all([leadPromise, messagesPromise, requirementsPromise, actionsPromise, workflowPromise, stepPromise]);
+  const { data: org } = lead?.organisation_id ? await db.from("organisations").select("id,name").eq("id", lead.organisation_id).maybeSingle() : { data: null };
 
   const channel = conversation.channel.replaceAll("_", " ");
   return <main className="page-shell assistant-page">
