@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { createSupabaseServiceClient } from "@/lib/supabase/service";
 import { ensureChannelConversation } from "@/lib/assistant/runtime";
-import { startEmailFollowUp, startVoiceFollowUp } from "@/lib/assistant/channels";
+import { startEmailFollowUp } from "@/lib/assistant/channels";
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const MAX_MESSAGE_LENGTH = 5000;
@@ -31,7 +31,6 @@ export async function POST(request: Request) {
     const rawPreferredChannel = text(body.preferred_channel, 50);
     const preferredChannel = (ALLOWED_CHANNELS as readonly string[]).includes(rawPreferredChannel) ? rawPreferredChannel as PreferredContactChannel : "website_chat";
     if (!payloadIntakeId || !name || !EMAIL_RE.test(email) || !need || !message) return NextResponse.json({ error: "Invalid intake payload", request_id: requestId }, { status: 400 });
-    if ((preferredChannel === "whatsapp" || preferredChannel === "voice_call") && !phone) return NextResponse.json({ error: "A phone number is required for WhatsApp or phone follow-up.", request_id: requestId }, { status: 400 });
 
     const supabase = createSupabaseServiceClient();
     const db = supabase as any;
@@ -62,8 +61,7 @@ export async function POST(request: Request) {
     let assistant: Record<string, unknown> = { started: false, reason: "not_required" };
     try {
       if (preferredChannel === "email") assistant = await startEmailFollowUp(lead.id);
-      else if (preferredChannel === "voice_call") assistant = await startVoiceFollowUp(lead.id);
-      else { const conversation = await ensureChannelConversation(lead.id, preferredChannel); assistant = { started: true, conversationId: conversation.id }; }
+      else { const conversation = await ensureChannelConversation(lead.id, preferredChannel); assistant = { started: true, conversationId: conversation.id, action: preferredChannel === "whatsapp" ? "open_whatsapp" : preferredChannel === "voice_call" ? "call_assistant" : "open_website_chat" }; }
     } catch (error) { assistant = { started: false, reason: "channel_start_failed" }; console.error("Assistant channel start failed", { requestId, leadId: lead.id, preferredChannel, error }); }
 
     return NextResponse.json({ ok: true, lead_id: lead.id, request_id: requestId, preferred_channel: preferredChannel, assistant });
