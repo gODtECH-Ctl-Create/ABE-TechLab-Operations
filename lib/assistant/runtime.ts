@@ -31,6 +31,8 @@ export async function ensureConversation(leadId: string, channel: AssistantChann
   return conversation;
 }
 
+export const ensureChannelConversation = ensureConversation;
+
 async function loadContext(leadId: string, conversationId: string) {
   const supabase = createSupabaseServiceClient(); const db = supabase as any;
   const [{ data: lead, error: leadError }, { data: messages, error: messagesError }, { data: requirements, error: requirementsError }, { data: conversation, error: conversationError }] = await Promise.all([
