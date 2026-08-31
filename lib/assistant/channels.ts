@@ -54,3 +54,36 @@ export async function startVoiceFollowUp(leadId: string) {
 export async function ensureChannelConversation(leadId: string, channel: AssistantChannel) {
   return ensureConversation(leadId, channel);
 }
+
+async function getWhatsAppNumber() {
+  const direct = process.env.NEXT_PUBLIC_WHATSAPP_ASSISTANT_NUMBER || process.env.WHATSAPP_PUBLIC_PHONE_NUMBER;
+  if (direct) return phoneDigits(direct);
+  const token = process.env.WHATSAPP_ACCESS_TOKEN;
+  const phoneNumberId = process.env.WHATSAPP_PHONE_NUMBER_ID;
+  const versionRaw = process.env.WHATSAPP_GRAPH_VERSION || "v23.0";
+  if (!token || !phoneNumberId) return null;
+  const version = versionRaw.startsWith("v") ? versionRaw : `v${versionRaw}`;
+  const response = await fetch(`https://graph.facebook.com/${version}/${encodeURIComponent(phoneNumberId)}?fields=display_phone_number`, { headers: { Authorization: `Bearer ${token}` }, cache: "no-store" });
+  if (!response.ok) return null;
+  const body = await response.json();
+  return phoneDigits(body.display_phone_number);
+}
+
+async function getVoiceNumber() {
+  const direct = process.env.VAPI_PUBLIC_PHONE_NUMBER;
+  if (direct) return direct.trim();
+  const apiKey = process.env.VAPI_API_KEY;
+  const phoneNumberId = process.env.VAPI_PHONE_NUMBER_ID;
+  if (!apiKey || !phoneNumberId) return null;
+  const response = await fetch(`https://api.vapi.ai/phone-number/${encodeURIComponent(phoneNumberId)}`, { headers: { Authorization: `Bearer ${apiKey}` }, cache: "no-store" });
+  if (!response.ok) return null;
+  const body = await response.json();
+  return String(body.number ?? body.phoneNumber ?? body.fallbackDestination?.number ?? "").trim() || null;
+}
+
+export async function getPublicChannelLinks(leadId: string) {
+  const [whatsappNumber, voiceNumber] = await Promise.all([getWhatsAppNumber(), getVoiceNumber()]);
+  const whatsapp = whatsappNumber ? `https://wa.me/${whatsappNumber}?text=${encodeURIComponent(`Hi ABE TechLab Assistant. I'd like to continue my enquiry. Lead: ${leadId}`)}` : null;
+  const call = voiceNumber ? `tel:${voiceNumber.replace(/[^+\d]/g, "")}` : null;
+  return { whatsapp, call, whatsappNumber: whatsappNumber || null, voiceNumber: voiceNumber || null };
+}
