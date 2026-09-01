@@ -1,0 +1,1 @@
+Temporary channel routing fallback is configured for WhatsApp and voice.
