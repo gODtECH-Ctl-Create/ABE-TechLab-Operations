@@ -1,0 +1,1 @@
+Temporary channel routing uses the provided ABE TechLab number for WhatsApp and voice until dedicated provider numbers are configured.
