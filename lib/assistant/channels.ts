@@ -1,6 +1,10 @@
 import { ensureConversation, type AssistantChannel } from "@/lib/assistant/runtime";
 import { createSupabaseServiceClient } from "@/lib/supabase/service";
 
+// Temporary public channel number while the dedicated WhatsApp/Vapi numbers are being provisioned.
+// This is intentionally easy to remove once the real provider configuration is connected.
+const TEMP_ASSISTANT_PHONE_NUMBER = "08140479738";
+
 function phoneDigits(value: string | null | undefined) {
   return String(value ?? "").replace(/\D/g, "");
 }
@@ -56,34 +60,24 @@ export async function ensureChannelConversation(leadId: string, channel: Assista
 }
 
 async function getWhatsAppNumber() {
-  const direct = process.env.NEXT_PUBLIC_WHATSAPP_ASSISTANT_NUMBER || process.env.WHATSAPP_PUBLIC_PHONE_NUMBER;
+  const direct = process.env.WHATSAPP_PUBLIC_PHONE_NUMBER || process.env.NEXT_PUBLIC_WHATSAPP_ASSISTANT_NUMBER;
   if (direct) return phoneDigits(direct);
-  const token = process.env.WHATSAPP_ACCESS_TOKEN;
-  const phoneNumberId = process.env.WHATSAPP_PHONE_NUMBER_ID;
-  const versionRaw = process.env.WHATSAPP_GRAPH_VERSION || "v23.0";
-  if (!token || !phoneNumberId) return null;
-  const version = versionRaw.startsWith("v") ? versionRaw : `v${versionRaw}`;
-  const response = await fetch(`https://graph.facebook.com/${version}/${encodeURIComponent(phoneNumberId)}?fields=display_phone_number`, { headers: { Authorization: `Bearer ${token}` }, cache: "no-store" });
-  if (!response.ok) return null;
-  const body = await response.json();
-  return phoneDigits(body.display_phone_number);
+
+  // Temporary fallback until Meta WhatsApp Cloud API is provisioned.
+  return phoneDigits(TEMP_ASSISTANT_PHONE_NUMBER);
 }
 
 async function getVoiceNumber() {
   const direct = process.env.VAPI_PUBLIC_PHONE_NUMBER;
   if (direct) return direct.trim();
-  const apiKey = process.env.VAPI_API_KEY;
-  const phoneNumberId = process.env.VAPI_PHONE_NUMBER_ID;
-  if (!apiKey || !phoneNumberId) return null;
-  const response = await fetch(`https://api.vapi.ai/phone-number/${encodeURIComponent(phoneNumberId)}`, { headers: { Authorization: `Bearer ${apiKey}` }, cache: "no-store" });
-  if (!response.ok) return null;
-  const body = await response.json();
-  return String(body.number ?? body.phoneNumber ?? body.fallbackDestination?.number ?? "").trim() || null;
+
+  // Temporary fallback until the dedicated Vapi number is provisioned.
+  return TEMP_ASSISTANT_PHONE_NUMBER;
 }
 
 export async function getPublicChannelLinks(leadId: string) {
   const [whatsappNumber, voiceNumber] = await Promise.all([getWhatsAppNumber(), getVoiceNumber()]);
-  const whatsapp = whatsappNumber ? `https://wa.me/${whatsappNumber}?text=${encodeURIComponent(`Hi ABE TechLab Assistant. I'd like to continue my enquiry. Lead: ${leadId}`)}` : null;
-  const call = voiceNumber ? `tel:${voiceNumber.replace(/[^+\d]/g, "")}` : null;
+  const whatsapp = whatsappNumber ? `https://wa.me/${whatsappNumber.startsWith("234") ? whatsappNumber : `234${whatsappNumber.replace(/^0+/, "")}`}?text=${encodeURIComponent(`Hi ABE TechLab Assistant. I'd like to continue my enquiry. Lead: ${leadId}`)}` : null;
+  const call = voiceNumber ? `tel:${voiceNumber.startsWith("+") ? voiceNumber : `+234${voiceNumber.replace(/^0+/, "")}`}` : null;
   return { whatsapp, call, whatsappNumber: whatsappNumber || null, voiceNumber: voiceNumber || null };
 }
