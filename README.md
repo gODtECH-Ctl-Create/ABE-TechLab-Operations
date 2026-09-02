@@ -91,9 +91,9 @@ The repository contains a Vercel Cron Job in `vercel.json`:
 }
 ```
 
-This runs once per day at approximately 03:00 UTC. The project is currently on Vercel's Hobby plan, whose Cron Jobs are limited to daily execution. Supabase's current guidance says a few user database requests each day typically keeps a Free Plan project from being paused. citeturn626351search0turn251922search0
+This runs once per day at approximately 03:00 UTC. The project is currently on Vercel's Hobby plan, whose Cron Jobs are limited to daily execution. Supabase's current guidance says a few user database requests each day typically keeps a Free Plan project from being paused.
 
-After deploying, the cron job is registered against the production deployment. Vercel Cron Jobs invoke production paths only, not preview deployments. citeturn626351search1turn626351search3
+Vercel registers Cron Jobs from production deployments only, not preview deployments.
 
 ### Supabase migration
 
@@ -113,7 +113,7 @@ For production hardening, configure a random `CRON_SECRET` environment variable 
 Authorization: Bearer <CRON_SECRET>
 ```
 
-Vercel documents `CRON_SECRET` as the recommended way to secure Cron Job invocations. citeturn626351search1
+Vercel documents `CRON_SECRET` as the recommended way to secure Cron Job invocations.
 
 ## Deployment
 
