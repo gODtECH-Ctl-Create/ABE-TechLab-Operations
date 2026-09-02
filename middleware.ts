@@ -24,5 +24,7 @@ export async function middleware(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/((?!_next/static|_next/image|favicon.ico).*)"],
+  // Keep the heartbeat endpoint lightweight: it must not perform an
+  // additional authentication refresh request before reaching Supabase.
+  matcher: ["/((?!api/health/supabase|_next/static|_next/image|favicon.ico).*)"],
 };
