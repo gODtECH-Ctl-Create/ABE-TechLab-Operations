@@ -58,9 +58,72 @@ Autonomous actions will be introduced gradually. High-impact external actions re
 - Scheduled jobs
 - Analytics and reporting
 
+## Supabase heartbeat
+
+The Operations platform includes a lightweight health endpoint designed to keep the connected Supabase project receiving regular database activity without writing business records.
+
+### Endpoint
+
+```text
+GET https://abe-tech-lab-operations.vercel.app/api/health/supabase
+```
+
+The endpoint performs a single read against the isolated `system_heartbeat` table and returns:
+
+- `200` when the Supabase query succeeds
+- `503` when the database request fails
+- `401` when `CRON_SECRET` is configured and the request is not authenticated with the expected Bearer token
+
+The heartbeat table contains one fixed row and is protected with Row Level Security (RLS). No heartbeat row is created for each request.
+
+### Scheduled execution
+
+The repository contains a Vercel Cron Job in `vercel.json`:
+
+```json
+{
+  "crons": [
+    {
+      "path": "/api/health/supabase",
+      "schedule": "0 3 * * *"
+    }
+  ]
+}
+```
+
+This runs once per day at approximately 03:00 UTC. The project is currently on Vercel's Hobby plan, whose Cron Jobs are limited to daily execution. Supabase's current guidance says a few user database requests each day typically keeps a Free Plan project from being paused. citeturn626351search0turn251922search0
+
+After deploying, the cron job is registered against the production deployment. Vercel Cron Jobs invoke production paths only, not preview deployments. citeturn626351search1turn626351search3
+
+### Supabase migration
+
+The heartbeat table is created by:
+
+```text
+supabase/migrations/20260902203000_add_system_heartbeat.sql
+```
+
+Apply the migration to the connected Supabase project before relying on the heartbeat endpoint.
+
+### Cron security
+
+For production hardening, configure a random `CRON_SECRET` environment variable in Vercel. The endpoint will then require:
+
+```text
+Authorization: Bearer <CRON_SECRET>
+```
+
+Vercel documents `CRON_SECRET` as the recommended way to secure Cron Job invocations. citeturn626351search1
+
 ## Deployment
 
 The production deployment is managed through Vercel from the `main` branch. Build/type-check failures must be resolved before production changes are considered live.
+
+Production project:
+
+```text
+https://abe-tech-lab-operations.vercel.app
+```
 
 ## Security
 
