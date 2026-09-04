@@ -1,130 +1,116 @@
-# ABE TechLab Operations
+<div align="center">
 
-Private internal operations platform for ABE TechLab.
+# 🧭 ABE TechLab Operations
 
-## Purpose
+### The internal operating system for ABE TechLab.
 
-ABE TechLab Operations is the foundation for the company's internal AI-assisted operating system. It will connect the public ABE TechLab website with lead intelligence, customer relationship management (CRM), research, outreach, content operations, analytics, and ARIA.
+<p>
+<img src="https://img.shields.io/badge/status-internal%20platform-111827" alt="Internal platform">
+<img src="https://img.shields.io/badge/license-proprietary-7c3aed" alt="Proprietary license">
+<img src="https://img.shields.io/badge/intelligence-ARIA-0f766e" alt="ARIA intelligence layer">
+</p>
 
-## ARIA
+**AI proposes → ABE TechLab reviews → approved actions execute → results return.**
 
-ARIA is the AI intelligence layer inside ABE TechLab Operations. ARIA is not the whole platform. It will research, classify, recommend, draft, monitor, and eventually execute approved low-risk actions through controlled tools.
+</div>
 
-## Initial architecture
+---
 
-- **Dashboard:** internal operations workspace
-- **CRM:** organisations, contacts, leads, opportunities, activities
-- **Research:** organisation and market intelligence
-- **Outreach:** approved communication plans and follow-ups
-- **Content:** insights and social content pipeline
-- **ARIA:** AI reasoning, recommendations, agents, prompts, and tools
-- **Integrations:** website, email, analytics, social platforms, GitHub, and future services
+## 🧭 What is it?
 
-## Operating principle
+ABE TechLab Operations is the internal operations platform connecting the public ABE TechLab presence with lead intelligence, customer relationship management (CRM), research, outreach, content operations, analytics, GitHub, and the **ARIA** intelligence layer.
 
-> AI proposes → ABE TechLab reviews → approved actions execute → results return to the system.
+<table>
+<tr><td width="50%">
 
-Autonomous actions will be introduced gradually. High-impact external actions remain approval-gated until they are proven reliable.
+### 🗂️ Operations
+Organisations, contacts, leads, opportunities, activities, and operational dashboards.
 
-## Roadmap
+### 🔎 Research
+Organisation and market intelligence for informed decisions.
 
-### Operations Core v0.1
+### 📣 Outreach
+Approved communication plans and follow-ups.
 
-1. Application foundation
-2. Authentication and access control
-3. Operations dashboard
-4. Organisation and contact records
-5. Lead and opportunity pipeline
-6. Activity/event log
-7. Public website lead intake
-8. Initial ARIA workspace
-9. Environment and secrets management
-10. Documentation and GitHub issue workflow
+</td><td width="50%">
 
-### ARIA v0.2
+### 📝 Content
+Insights and social-content workflows.
 
-- Organisation research
-- Lead qualification
-- Opportunity scoring
-- Service recommendations
-- Outreach-plan generation
-- Follow-up recommendations
+### 🤖 ARIA
+Research, classification, recommendations, drafting, monitoring, and controlled actions.
 
-### Automation v0.3
+### 🔌 Integrations
+Website, email, analytics, social platforms, GitHub, and future services.
 
-- Content pipeline
-- Social publishing workflows
-- Email workflows
-- Scheduled jobs
-- Analytics and reporting
+</td></tr>
+</table>
 
-## Supabase heartbeat
+## 🔄 Operating model
 
-The Operations platform includes a lightweight health endpoint designed to keep the connected Supabase project receiving regular database activity without writing business records.
+```mermaid
+graph LR
+    A[Signals & data] --> B[Operations platform]
+    B --> C[ARIA]
+    C --> D[Research]
+    C --> E[Recommendations]
+    C --> F[Drafts]
+    D --> G[ABE TechLab review]
+    E --> G
+    F --> G
+    G --> H[Approved action]
+    H --> I[External system]
+    I --> B
+```
 
-### Endpoint
+<details open>
+<summary><strong>🧠 ARIA boundary</strong></summary>
+
+ARIA is the intelligence layer, not the whole platform. High-impact external actions remain approval-gated until the relevant automation is proven reliable.
+
+</details>
+
+<details>
+<summary><strong>🗺️ Roadmap</strong></summary>
+
+| Release | Focus |
+| --- | --- |
+| Operations Core v0.1 | Auth, dashboard, CRM, lead pipeline, activity log, public lead intake, initial ARIA workspace |
+| ARIA v0.2 | Research, qualification, scoring, recommendations, outreach planning |
+| Automation v0.3 | Content, social publishing, email workflows, scheduled jobs, analytics |
+
+</details>
+
+## 💓 Supabase heartbeat
+
+The application includes a lightweight health endpoint that performs a read against the isolated `system_heartbeat` table. It is infrastructure activity, not business-record creation.
 
 ```text
-GET https://abe-tech-lab-operations.vercel.app/api/health/supabase
+GET /api/health/supabase
 ```
 
-The endpoint performs a single read against the isolated `system_heartbeat` table and returns:
+The repository also contains a Vercel Cron configuration for the heartbeat.
 
-- `200` when the Supabase query succeeds
-- `503` when the database request fails
-- `401` when `CRON_SECRET` is configured and the request is not authenticated with the expected Bearer token
+<details>
+<summary><strong>🔐 Security</strong></summary>
 
-The heartbeat table contains one fixed row and is protected with Row Level Security (RLS). No heartbeat row is created for each request.
+Secrets must never be committed to Git. Production credentials belong in Vercel environment variables or an approved secrets manager.
 
-### Scheduled execution
+</details>
 
-The repository contains a Vercel Cron Job in `vercel.json`:
+## 🚀 Development
 
-```json
-{
-  "crons": [
-    {
-      "path": "/api/health/supabase",
-      "schedule": "0 3 * * *"
-    }
-  ]
-}
+```bash
+npm install
+npm run dev
 ```
 
-This runs once per day at approximately 03:00 UTC. The project is currently on Vercel's Hobby plan, whose Cron Jobs are limited to daily execution. Supabase's current guidance says a few user database requests each day typically keeps a Free Plan project from being paused.
+Production deployment is managed through Vercel from `main`. Build and type-check failures must be resolved before production changes are considered live.
 
-Vercel registers Cron Jobs from production deployments only, not preview deployments.
+## 📌 Status
 
-### Supabase migration
+**Internal platform in active development.**
 
-The heartbeat table is created by:
+## 🔐 Ownership
 
-```text
-supabase/migrations/20260902203000_add_system_heartbeat.sql
-```
-
-Apply the migration to the connected Supabase project before relying on the heartbeat endpoint.
-
-### Cron security
-
-For production hardening, configure a random `CRON_SECRET` environment variable in Vercel. The endpoint will then require:
-
-```text
-Authorization: Bearer <CRON_SECRET>
-```
-
-Vercel documents `CRON_SECRET` as the recommended way to secure Cron Job invocations.
-
-## Deployment
-
-The production deployment is managed through Vercel from the `main` branch. Build/type-check failures must be resolved before production changes are considered live.
-
-Production project:
-
-```text
-https://abe-tech-lab-operations.vercel.app
-```
-
-## Security
-
-This repository is private. Secrets must never be committed to GitHub. Production credentials belong in the hosting provider's encrypted environment variables or an approved secrets manager.
+This repository contains proprietary internal software, operational workflows, and documentation. See [`LICENSE`](./LICENSE) for usage terms.
