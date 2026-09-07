@@ -65,6 +65,8 @@ create policy "operations read ai runs" on public.ai_runs
   for select to authenticated using (public.has_operations_access());
 create policy "operations write ai runs" on public.ai_runs
   for insert to authenticated with check (public.has_operations_access());
+create policy "operations update ai runs" on public.ai_runs
+  for update to authenticated using (public.has_operations_access()) with check (public.has_operations_access());
 
 create policy "operations read ai tool calls" on public.ai_tool_calls
   for select to authenticated using (public.has_operations_access());
