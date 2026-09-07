@@ -1,5 +1,6 @@
 import { createSupabaseServerClient } from "@/lib/supabase/server";
-import { generateWithFailover, getAiRuntimeMode } from "@/lib/ai/provider-router";
+import { generateAi } from "@/lib/ai/gateway";
+import { getAiRuntimeMode } from "@/lib/ai/provider-router";
 
 type ToolContext = { userId: string };
 type ToolResult = { name: string; result: unknown };
@@ -48,25 +49,31 @@ function buildPrompt(toolResults: ToolResult[]) {
 export async function runAriaBrief(userId: string) {
   const mode = getAiRuntimeMode();
   if (mode === "off") throw new Error("ARIA is disabled because AI_RUNTIME_MODE=off.");
-  if (mode === "action") throw new Error("ARIA action mode is not enabled for the initial read-only runtime.");
 
   const toolResults = await runTools({ userId });
   const requestId = crypto.randomUUID();
   const supabase = await createSupabaseServerClient();
   const db = supabase as any;
 
-  const { data: run, error: runInsertError } = await db.from("ai_runs").insert({
+  const { data: run, error: runError } = await db.from("ai_runs").insert({
     request_id: requestId,
     agent: "aria",
     task: "operations_brief",
     mode,
     status: "started",
-    metadata: { tool_count: toolResults.length, user_id: userId },
+    metadata: { tool_count: toolResults.length },
   }).select("id").single();
-  if (runInsertError) throw runInsertError;
+
+  if (runError || !run) throw runError ?? new Error("Unable to create AI run record");
 
   try {
-    const result = await generateWithFailover(buildPrompt(toolResults), "aria_operations_brief", requestId);
+    const result = await generateAi({
+      surface: "aria_internal",
+      prompt: buildPrompt(toolResults),
+      task: "aria_operations_brief",
+      requestId,
+    });
+
     await db.from("ai_runs").update({
       status: "completed",
       provider: result.provider,
@@ -74,10 +81,14 @@ export async function runAriaBrief(userId: string) {
       input_tokens: result.usage?.inputTokens ?? null,
       output_tokens: result.usage?.outputTokens ?? null,
       completed_at: new Date().toISOString(),
-      metadata: { attempted: result.attempted, fallback_used: result.fallbackUsed, tool_count: toolResults.length, user_id: userId },
-    }).eq("request_id", requestId);
+      metadata: {
+        attempted: result.attempted,
+        fallback_used: result.fallbackUsed,
+        tool_count: toolResults.length,
+      },
+    }).eq("id", run.id);
 
-    await db.from("ai_tool_calls").insert(toolResults.map((tool) => ({
+    const { error: toolError } = await db.from("ai_tool_calls").insert(toolResults.map((tool) => ({
       run_id: run.id,
       tool_name: tool.name,
       status: "completed",
@@ -85,6 +96,7 @@ export async function runAriaBrief(userId: string) {
       output: tool.result,
       completed_at: new Date().toISOString(),
     })));
+    if (toolError) throw toolError;
 
     await db.from("audit_events").insert({
       actor_type: "aria",
@@ -98,7 +110,7 @@ export async function runAriaBrief(userId: string) {
     return { ...result, requestId, toolResults };
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);
-    await db.from("ai_runs").update({ status: "failed", error_message: message, completed_at: new Date().toISOString() }).eq("request_id", requestId);
+    await db.from("ai_runs").update({ status: "failed", error_message: message, completed_at: new Date().toISOString() }).eq("id", run.id);
     throw error;
   }
 }
