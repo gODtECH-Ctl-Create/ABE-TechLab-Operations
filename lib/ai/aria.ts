@@ -46,6 +46,12 @@ function buildPrompt(toolResults: ToolResult[]) {
   ].join("\n\n");
 }
 
+function telemetryOutput(value: unknown) {
+  if (Array.isArray(value)) return { type: "array", count: value.length };
+  if (value && typeof value === "object") return { type: "object", keys: Object.keys(value as Record<string, unknown>).slice(0, 25) };
+  return { type: typeof value };
+}
+
 export async function runAriaBrief(userId: string) {
   const mode = getAiRuntimeMode();
   if (mode === "off") throw new Error("ARIA is disabled because AI_RUNTIME_MODE=off.");
@@ -93,7 +99,7 @@ export async function runAriaBrief(userId: string) {
       tool_name: tool.name,
       status: "completed",
       input: {},
-      output: tool.result,
+      output: telemetryOutput(tool.result),
       completed_at: new Date().toISOString(),
     })));
     if (toolError) throw toolError;
