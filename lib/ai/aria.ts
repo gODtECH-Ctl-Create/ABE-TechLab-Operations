@@ -55,14 +55,15 @@ export async function runAriaBrief(userId: string) {
   const supabase = await createSupabaseServerClient();
   const db = supabase as any;
 
-  await db.from("ai_runs").insert({
+  const { data: run, error: runInsertError } = await db.from("ai_runs").insert({
     request_id: requestId,
     agent: "aria",
     task: "operations_brief",
     mode,
     status: "started",
     metadata: { tool_count: toolResults.length, user_id: userId },
-  });
+  }).select("id").single();
+  if (runInsertError) throw runInsertError;
 
   try {
     const result = await generateWithFailover(buildPrompt(toolResults), "aria_operations_brief", requestId);
@@ -77,11 +78,12 @@ export async function runAriaBrief(userId: string) {
     }).eq("request_id", requestId);
 
     await db.from("ai_tool_calls").insert(toolResults.map((tool) => ({
-      run_id: null,
+      run_id: run.id,
       tool_name: tool.name,
       status: "completed",
       input: {},
       output: tool.result,
+      completed_at: new Date().toISOString(),
     })));
 
     await db.from("audit_events").insert({
@@ -89,7 +91,7 @@ export async function runAriaBrief(userId: string) {
       actor_id: userId,
       action: "aria.operations_brief_generated",
       entity_type: "ai_run",
-      entity_id: null,
+      entity_id: run.id,
       metadata: { request_id: requestId, provider: result.provider, model: result.model, fallback_used: result.fallbackUsed },
     });
 
