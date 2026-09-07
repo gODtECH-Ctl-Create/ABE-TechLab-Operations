@@ -9,7 +9,7 @@ create table if not exists public.ai_provider_usage (
   duration_ms integer,
   input_tokens integer,
   output_tokens integer,
-  request_id uuid,
+  request_id text,
   error_message text,
   created_at timestamptz not null default now()
 );
