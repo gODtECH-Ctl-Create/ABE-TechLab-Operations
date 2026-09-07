@@ -1,6 +1,8 @@
 # AI Provider Setup
 
-ARIA uses a server-side provider pool. Providers are attempted in priority order and missing credentials are skipped safely.
+ARIA and the Client Assistant use the same server-side provider pool through `lib/ai/gateway.ts`. Agent semantics stay separate while transport, failover and telemetry remain shared.
+
+Providers are attempted in priority order and missing credentials are skipped safely.
 
 ## Server-side environment variables
 
@@ -30,9 +32,16 @@ Never expose these keys to browser code or commit them to GitHub.
 - `advisory`: read-only intelligence and recommendations.
 - `action`: reserved for the later controlled tool-execution phase. Do not enable it for the initial ARIA slice.
 
+## AI gateway surfaces
+
+- `aria_internal`: internal Operations intelligence. The first enabled surface is the read-only operations brief.
+- `client_assistant`: customer-facing service discovery and conversation runtime. Existing per-conversation `ai_enabled` state remains respected.
+
+Both surfaces share provider routing and usage telemetry, but they do not share prompts, business responsibilities, or action policies.
+
 ## Operations UI
 
-Open `/settings/integrations/ai` to review provider configuration and usage posture.
+Open `/settings/integrations/ai` to review provider configuration, recent usage, failures, and the active runtime mode.
 
 ## First ARIA endpoint
 
