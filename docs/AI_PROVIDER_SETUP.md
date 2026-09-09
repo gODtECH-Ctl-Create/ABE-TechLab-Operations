@@ -7,7 +7,9 @@ Providers are attempted in priority order and missing credentials are skipped sa
 ## Server-side environment variables
 
 ```text
-AI_RUNTIME_MODE=off
+ARIA_AI_RUNTIME_MODE=off
+CLIENT_ASSISTANT_AI_RUNTIME_MODE=advisory
+AI_PROVIDER_TIMEOUT_MS=15000
 NVIDIA_API_KEY=
 NVIDIA_MODEL=nvidia/nemotron-3.5-lightning-30b-a3b
 GEMINI_API_KEY=
@@ -26,11 +28,15 @@ OPENAI_MODEL=gpt-5.4-mini
 
 Never expose these keys to browser code or commit them to GitHub.
 
-## Runtime modes
+## Runtime modes and surfaces
 
-- `off`: no model execution. This is the default and the safe baseline.
+- `off`: no model execution for that surface.
 - `advisory`: read-only intelligence and recommendations.
 - `action`: reserved for the later controlled tool-execution phase. Do not enable it for the initial ARIA slice.
+
+`ARIA_AI_RUNTIME_MODE` and `CLIENT_ASSISTANT_AI_RUNTIME_MODE` are independent. ARIA defaults to `off`; the Client Assistant defaults to `advisory` so deploying ARIA does not silently disable existing customer conversations. `AI_RUNTIME_MODE` is retained as a shared fallback for compatibility.
+
+Provider calls use a bounded timeout before failover. Set `AI_PROVIDER_TIMEOUT_MS` only when the default 15-second limit is unsuitable.
 
 ## AI gateway surfaces
 

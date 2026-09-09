@@ -1,6 +1,8 @@
 import { createSupabaseServerClient } from "@/lib/supabase/server";
+import { createSupabaseServiceClient } from "@/lib/supabase/service";
 import { generateAi } from "@/lib/ai/gateway";
 import { getAiRuntimeMode } from "@/lib/ai/provider-router";
+import { addInvoiceTotals, type InvoiceRow } from "@/lib/ai/finance";
 
 type ToolContext = { userId: string };
 type ToolResult = { name: string; result: unknown };
@@ -12,7 +14,7 @@ async function runTools(context: ToolContext): Promise<ToolResult[]> {
   const [leads, opportunities, invoices, activities, approvals] = await Promise.all([
     db.from("leads").select("id,organisation_id,status,service_interest,score,next_action,next_action_due_at,updated_at").order("updated_at", { ascending: false }).limit(100),
     db.from("opportunities").select("id,organisation_id,name,stage,value,currency,probability,expected_close_date,owner_id,next_action,next_action_due_at,updated_at").order("updated_at", { ascending: false }).limit(100),
-    db.from("invoices").select("id,invoice_number,issue_date,due_date,status,currency,client_company,project,amount_paid,tax,created_at,updated_at").order("created_at", { ascending: false }).limit(100),
+    db.from("invoices").select("id,invoice_number,issue_date,due_date,status,currency,client_company,project,amount_paid,tax,created_at,updated_at,invoice_items(quantity,unit_price)").order("created_at", { ascending: false }).limit(100),
     db.from("audit_events").select("id,actor_type,action,entity_type,entity_id,metadata,created_at").order("created_at", { ascending: false }).limit(20),
     db.from("approval_queue").select("id,title,entity_type,entity_id,action_type,proposed_by,status,created_at,updated_at").eq("status", "pending").order("created_at", { ascending: false }).limit(50),
   ]);
@@ -24,10 +26,10 @@ async function runTools(context: ToolContext): Promise<ToolResult[]> {
   return [
     { name: "get_leads", result: leads.data ?? [] },
     { name: "get_opportunities", result: opportunities.data ?? [] },
-    { name: "get_invoices", result: invoices.data ?? [] },
+    { name: "get_invoices", result: addInvoiceTotals((invoices.data ?? []) as InvoiceRow[]) },
     { name: "get_recent_activity", result: activities.data ?? [] },
     { name: "get_pending_approvals", result: approvals.data ?? [] },
-    { name: "get_runtime", result: { mode: getAiRuntimeMode(), userId: context.userId } },
+    { name: "get_runtime", result: { mode: getAiRuntimeMode("aria_internal"), userId: context.userId } },
   ];
 }
 
@@ -53,13 +55,12 @@ function telemetryOutput(value: unknown) {
 }
 
 export async function runAriaBrief(userId: string) {
-  const mode = getAiRuntimeMode();
+  const mode = getAiRuntimeMode("aria_internal");
   if (mode === "off") throw new Error("ARIA is disabled because AI_RUNTIME_MODE=off.");
 
   const toolResults = await runTools({ userId });
   const requestId = crypto.randomUUID();
-  const supabase = await createSupabaseServerClient();
-  const db = supabase as any;
+  const db = createSupabaseServiceClient() as any;
 
   const { data: run, error: runError } = await db.from("ai_runs").insert({
     request_id: requestId,

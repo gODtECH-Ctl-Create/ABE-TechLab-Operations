@@ -12,7 +12,7 @@ export default async function AiProviderSettingsPage() {
   if (!["admin", "operator", "reviewer"].includes(role ?? "")) redirect("/");
 
   const dashboard = await getAiProviderDashboard();
-  const { providers, agentRouter, mode } = dashboard;
+  const { providers, agentRouter, mode, assistantMode } = dashboard;
   const configured = providers.filter((provider) => provider.configured).length;
   const failures = providers.reduce((sum, provider) => sum + provider.failures24h, 0);
   const requests = providers.reduce((sum, provider) => sum + provider.requests24h, 0);
@@ -27,8 +27,9 @@ export default async function AiProviderSettingsPage() {
       <div className="summary-card"><span>Configured</span><strong>{configured}/{providers.length}</strong></div>
       <div className="summary-card"><span>Requests / 24h</span><strong>{requests}</strong></div>
       <div className="summary-card"><span>Failures / 24h</span><strong>{failures}</strong></div>
-      <div className="summary-card"><span>Execution</span><strong>{modeLabel}</strong></div>
+      <div className="summary-card"><span>ARIA</span><strong>{modeLabel}</strong></div>
     </section>
+    <section className="table-card"><div className="section-heading"><div><div className="eyebrow">Runtime surfaces</div><h2>Independent execution controls</h2><p>ARIA and the Client Assistant can be paused independently.</p></div></div><div className="ai-rule-grid"><article className="ai-rule"><strong>ARIA</strong><p>{mode === "off" ? "Paused" : mode === "advisory" ? "Advisory" : "Action"}</p></article><article className="ai-rule"><strong>Client Assistant</strong><p>{assistantMode === "off" ? "Paused" : assistantMode === "advisory" ? "Advisory" : "Action"}</p></article></div></section>
     <section className="table-card">
       <div className="section-heading"><div><div className="eyebrow">Provider pool</div><h2>Provider posture</h2><p>Credentials are never displayed here. Missing providers are skipped when execution is enabled.</p></div></div>
       <div className="ai-provider-list">{providers.map((provider) => {

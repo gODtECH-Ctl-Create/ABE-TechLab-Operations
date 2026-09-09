@@ -19,9 +19,10 @@ const surfaceLabel: Record<AiSurface, string> = {
 };
 
 export function assertAiSurfaceEnabled(surface: AiSurface) {
-  const mode = getAiRuntimeMode();
+  const mode = getAiRuntimeMode(surface);
   if (mode === "off") {
-    throw new Error(`AI execution is disabled for ${surfaceLabel[surface]}. Set AI_RUNTIME_MODE=advisory or action.`);
+    const variable = surface === "aria_internal" ? "ARIA_AI_RUNTIME_MODE" : "CLIENT_ASSISTANT_AI_RUNTIME_MODE";
+    throw new Error(`AI execution is disabled for ${surfaceLabel[surface]}. Set ${variable}=advisory or action.`);
   }
 
   if (surface === "aria_internal" && mode === "action") {

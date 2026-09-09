@@ -32,11 +32,13 @@ ARIA / Client Assistant
 
 ## Safety boundary
 
-`AI_RUNTIME_MODE=off` disables all model execution.
+`ARIA_AI_RUNTIME_MODE=off` disables internal ARIA execution without affecting the Client Assistant.
 
-`AI_RUNTIME_MODE=advisory` allows read-only intelligence and recommendations.
+`CLIENT_ASSISTANT_AI_RUNTIME_MODE=off` independently pauses customer-facing model execution.
 
-`AI_RUNTIME_MODE=action` is reserved for a later phase where every write-capable tool is individually governed and can route through the existing human approval queue.
+`advisory` allows read-only intelligence and recommendations.
+
+`action` is reserved for a later phase where every write-capable tool is individually governed and can route through the existing human approval queue.
 
 ## Research boundary
 

@@ -5,12 +5,16 @@ ARIA is isolated behind the existing provider router. The first runtime slice is
 ## Server environment
 
 ```text
-AI_RUNTIME_MODE=off
+ARIA_AI_RUNTIME_MODE=off
+CLIENT_ASSISTANT_AI_RUNTIME_MODE=advisory
+AI_PROVIDER_TIMEOUT_MS=15000
 NVIDIA_API_KEY=
 NVIDIA_MODEL=nvidia/nemotron-3.5-lightning-30b-a3b
 ```
 
-`AI_RUNTIME_MODE` accepts `off`, `advisory`, or `action`. Keep it at `off` until the NVIDIA credential and AI runtime migration are deployed. The initial ARIA endpoint is designed for `advisory` mode only.
+Both runtime variables accept `off`, `advisory`, or `action`. ARIA defaults to `off`; the Client Assistant defaults to `advisory` to preserve its existing behavior. The legacy `AI_RUNTIME_MODE` remains a shared fallback during rollout. Keep ARIA off until the NVIDIA credential and AI runtime migration are deployed. The initial ARIA endpoint is designed for `advisory` mode only.
+
+Provider calls time out after 15 seconds by default so failover can continue. `AI_PROVIDER_TIMEOUT_MS` may be set between 1,000 and 60,000 milliseconds.
 
 ## NVIDIA provider
 
@@ -21,3 +25,5 @@ Provider keys are server-side only and must never be exposed to browser code.
 ## First runtime surface
 
 `POST /api/ai/aria/brief` requires an authenticated Operations user with an administrator, operator, or reviewer role. It reads leads, opportunities, invoices, recent audit activity, and pending approvals, then asks ARIA for a decision-ready briefing. No business write is performed by this endpoint.
+
+Invoice totals are calculated from stored line items, tax/other charges, and amount paid before the data is supplied to ARIA.

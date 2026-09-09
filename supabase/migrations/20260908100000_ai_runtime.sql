@@ -40,7 +40,7 @@ create index if not exists ai_runs_agent_idx on public.ai_runs(agent, created_at
 
 create table if not exists public.ai_tool_calls (
   id uuid primary key default gen_random_uuid(),
-  run_id uuid references public.ai_runs(id) on delete cascade,
+  run_id uuid not null references public.ai_runs(id) on delete cascade,
   tool_name text not null,
   status text not null check (status in ('started','completed','failed','requires_review')),
   input jsonb not null default '{}'::jsonb,
@@ -56,19 +56,21 @@ alter table public.ai_provider_usage enable row level security;
 alter table public.ai_runs enable row level security;
 alter table public.ai_tool_calls enable row level security;
 
+-- Replace the legacy read policy with the canonical Operations policy.
+drop policy if exists "ai_provider_usage_admin_read" on public.ai_provider_usage;
 create policy "operations read ai provider usage" on public.ai_provider_usage
   for select to authenticated using (public.has_operations_access());
-create policy "operations write ai provider usage" on public.ai_provider_usage
-  for insert to authenticated with check (public.has_operations_access());
-
 create policy "operations read ai runs" on public.ai_runs
   for select to authenticated using (public.has_operations_access());
-create policy "operations write ai runs" on public.ai_runs
-  for insert to authenticated with check (public.has_operations_access());
-create policy "operations update ai runs" on public.ai_runs
-  for update to authenticated using (public.has_operations_access()) with check (public.has_operations_access());
 
 create policy "operations read ai tool calls" on public.ai_tool_calls
   for select to authenticated using (public.has_operations_access());
-create policy "operations write ai tool calls" on public.ai_tool_calls
-  for insert to authenticated with check (public.has_operations_access());
+
+-- Telemetry is written only by trusted server-side code using the service role.
+-- Authenticated Operations users may inspect telemetry, but cannot forge it.
+revoke insert, update, delete on public.ai_provider_usage from authenticated;
+revoke insert, update, delete on public.ai_runs from authenticated;
+revoke insert, update, delete on public.ai_tool_calls from authenticated;
+revoke all on public.ai_provider_usage from anon;
+revoke all on public.ai_runs from anon;
+revoke all on public.ai_tool_calls from anon;

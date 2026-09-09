@@ -1,9 +1,11 @@
 import { createSupabaseServerClient } from "../supabase/server";
+import { createSupabaseServiceClient } from "../supabase/service";
 
 type ProviderName = "nvidia" | "gemini" | "grok" | "openrouter" | "cerebras" | "agentrouter" | "openai";
 type ProviderConfig = { name: ProviderName; label: string; keyEnv: string; modelEnv: string; defaultModel: string; baseUrl?: string };
 export type AiRouterResult = { text: string; provider: ProviderName; model: string; fallbackUsed: boolean; attempted: ProviderName[]; usage?: { inputTokens?: number; outputTokens?: number } };
 export type AiRuntimeMode = "off" | "advisory" | "action";
+export type AiRuntimeSurface = "aria_internal" | "client_assistant";
 
 export const PROVIDERS: ProviderConfig[] = [
   { name: "nvidia", label: "NVIDIA NIM", keyEnv: "NVIDIA_API_KEY", modelEnv: "NVIDIA_MODEL", defaultModel: "nvidia/nemotron-3.5-lightning-30b-a3b", baseUrl: "https://integrate.api.nvidia.com/v1" },
@@ -21,46 +23,86 @@ const envKeyFor = (config: ProviderConfig) => config.name === "agentrouter"
 const configured = (config: ProviderConfig) => Boolean(envKeyFor(config));
 const modelFor = (config: ProviderConfig) => process.env[config.modelEnv] || config.defaultModel;
 
-export function getAiRuntimeMode(): AiRuntimeMode {
-  const value = String(process.env.AI_RUNTIME_MODE || "off").toLowerCase();
-  return value === "advisory" || value === "action" ? value : "off";
+function normalizeRuntimeMode(value: string | undefined, fallback: AiRuntimeMode): AiRuntimeMode {
+  const normalized = String(value || fallback).toLowerCase();
+  return normalized === "advisory" || normalized === "action" ? normalized : "off";
+}
+
+export function getAiRuntimeMode(surface: AiRuntimeSurface = "aria_internal"): AiRuntimeMode {
+  if (surface === "client_assistant") {
+    return normalizeRuntimeMode(
+      process.env.CLIENT_ASSISTANT_AI_RUNTIME_MODE || process.env.AI_RUNTIME_MODE,
+      "advisory",
+    );
+  }
+
+  const value = process.env.ARIA_AI_RUNTIME_MODE || process.env.AI_RUNTIME_MODE;
+  return normalizeRuntimeMode(value, "off");
+}
+
+export function getProviderTimeoutMs() {
+  const value = Number(process.env.AI_PROVIDER_TIMEOUT_MS || 15000);
+  if (!Number.isFinite(value)) return 15000;
+  return Math.min(Math.max(Math.round(value), 1000), 60000);
+}
+
+function assertProviderText(value: unknown, label: string) {
+  const text = typeof value === "string" ? value.trim() : "";
+  if (!text) throw new Error(`${label} returned an empty response`);
+  return text;
+}
+
+function parseProviderJson(raw: string, label: string) {
+  try {
+    return JSON.parse(raw);
+  } catch {
+    throw new Error(`${label} returned invalid JSON`);
+  }
+}
+
+function providerFetch(url: string, init: RequestInit) {
+  return fetch(url, { ...init, signal: AbortSignal.timeout(getProviderTimeoutMs()) });
+}
+
+export function isAiRuntimeEnabled(surface: AiRuntimeSurface) {
+  return getAiRuntimeMode(surface) !== "off";
 }
 
 async function callOpenAiCompatible(config: ProviderConfig, prompt: string) {
-  const response = await fetch(`${config.baseUrl}/chat/completions`, {
+  const response = await providerFetch(`${config.baseUrl}/chat/completions`, {
     method: "POST",
     headers: { Authorization: `Bearer ${envKeyFor(config)}`, "Content-Type": "application/json" },
     body: JSON.stringify({ model: modelFor(config), messages: [{ role: "user", content: prompt }], temperature: 0.2 }),
   });
   const raw = await response.text();
   if (!response.ok) throw new Error(`${config.label} returned ${response.status}: ${raw.slice(0, 500)}`);
-  const data = JSON.parse(raw);
-  return { text: data?.choices?.[0]?.message?.content ?? "", usage: { inputTokens: data?.usage?.prompt_tokens, outputTokens: data?.usage?.completion_tokens } };
+  const data = parseProviderJson(raw, config.label);
+  return { text: assertProviderText(data?.choices?.[0]?.message?.content, config.label), usage: { inputTokens: data?.usage?.prompt_tokens, outputTokens: data?.usage?.completion_tokens } };
 }
 
 async function callGemini(config: ProviderConfig, prompt: string) {
-  const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${modelFor(config)}:generateContent?key=${envKeyFor(config)}`, {
+  const response = await providerFetch(`https://generativelanguage.googleapis.com/v1beta/models/${modelFor(config)}:generateContent?key=${envKeyFor(config)}`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ contents: [{ role: "user", parts: [{ text: prompt }] }], tools: [{ google_search: {} }] }),
   });
   const raw = await response.text();
   if (!response.ok) throw new Error(`${config.label} returned ${response.status}: ${raw.slice(0, 500)}`);
-  const data = JSON.parse(raw);
+  const data = parseProviderJson(raw, config.label);
   const text = (data?.candidates?.[0]?.content?.parts ?? []).map((part: { text?: string }) => part.text).filter(Boolean).join("\n");
-  return { text, usage: { inputTokens: data?.usageMetadata?.promptTokenCount, outputTokens: data?.usageMetadata?.candidatesTokenCount } };
+  return { text: assertProviderText(text, config.label), usage: { inputTokens: data?.usageMetadata?.promptTokenCount, outputTokens: data?.usageMetadata?.candidatesTokenCount } };
 }
 
 async function callAgentRouter(config: ProviderConfig, prompt: string) {
-  const response = await fetch(`${config.baseUrl}/domains/models/capabilities/chat-complete/execute`, {
+  const response = await providerFetch(`${config.baseUrl}/domains/models/capabilities/chat-complete/execute`, {
     method: "POST",
     headers: { Authorization: `Bearer ${envKeyFor(config)}`, "Content-Type": "application/json" },
     body: JSON.stringify({ model: modelFor(config), messages: [{ role: "user", content: prompt }], allowFallback: true }),
   });
   const raw = await response.text();
   if (!response.ok) throw new Error(`${config.label} returned ${response.status}: ${raw.slice(0, 500)}`);
-  const data = JSON.parse(raw);
-  return { text: data?.completionText ?? data?.text ?? data?.choices?.[0]?.message?.content ?? "", usage: { inputTokens: data?.usage?.inputTokens, outputTokens: data?.usage?.outputTokens } };
+  const data = parseProviderJson(raw, config.label);
+  return { text: assertProviderText(data?.completionText ?? data?.text ?? data?.choices?.[0]?.message?.content, config.label), usage: { inputTokens: data?.usage?.inputTokens, outputTokens: data?.usage?.outputTokens } };
 }
 
 async function callProvider(config: ProviderConfig, prompt: string) {
@@ -70,11 +112,12 @@ async function callProvider(config: ProviderConfig, prompt: string) {
 }
 
 export async function generateWithFailover(prompt: string, task = "general", requestId?: string): Promise<AiRouterResult> {
-  if (getAiRuntimeMode() === "off") throw new Error("AI runtime is disabled. Set AI_RUNTIME_MODE=advisory or action to enable execution.");
-
   const attempted: ProviderName[] = [];
   let lastError: Error | undefined;
-  const supabase = await createSupabaseServerClient().catch(() => null);
+  const supabase = (() => {
+    try { return createSupabaseServiceClient(); }
+    catch { return null; }
+  })();
 
   for (const config of PROVIDERS) {
     if (!configured(config)) continue;
@@ -120,5 +163,10 @@ export async function getAiProviderDashboard() {
     const failures = rows.filter((item) => item.status === "failed").length;
     return { ...provider, requests24h: rows.length, successes24h: rows.filter((item) => item.status === "success").length, failures24h: failures, failureRate24h: rows.length ? Math.round((failures / rows.length) * 100) : 0, inputTokens24h: rows.reduce((sum, row) => sum + (row.input_tokens ?? 0), 0), outputTokens24h: rows.reduce((sum, row) => sum + (row.output_tokens ?? 0), 0), lastRequestAt: rows[0]?.created_at ?? null };
   });
-  return { providers, agentRouter: await getAgentRouterWallet(), mode: getAiRuntimeMode() };
+  return {
+    providers,
+    agentRouter: await getAgentRouterWallet(),
+    mode: getAiRuntimeMode("aria_internal"),
+    assistantMode: getAiRuntimeMode("client_assistant"),
+  };
 }
