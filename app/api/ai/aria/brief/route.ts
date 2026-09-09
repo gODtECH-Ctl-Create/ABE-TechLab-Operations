@@ -2,6 +2,9 @@ import { NextResponse } from "next/server";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { runAriaBrief } from "@/lib/ai/aria";
 
+export const runtime = "nodejs";
+export const maxDuration = 300;
+
 export async function POST() {
   const supabase = await createSupabaseServerClient();
   const { data: { user } } = await supabase.auth.getUser();
@@ -20,7 +23,7 @@ export async function POST() {
       requestId: result.requestId,
       provider: result.provider,
       model: result.model,
-      text: result.text,
+      brief: result.brief,
       tools: result.toolResults.map((item) => item.name),
       fallbackUsed: result.fallbackUsed,
     });

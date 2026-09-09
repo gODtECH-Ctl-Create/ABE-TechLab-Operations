@@ -12,7 +12,8 @@ const items = [
   { href: "/outreach", label: "Outreach" },
   { href: "/follow-ups", label: "Follow-ups" },
   { href: "/invoices", label: "Invoices" },
-  { href: "/assistant", label: "AI Assistant" },
+  { href: "/aria", label: "ARIA", emphasis: true },
+  { href: "/assistant", label: "Client Inbox" },
   { href: "/approval", label: "Approval Queue" },
   { href: "/prospecting", label: "Research" },
   { href: "/contacts", label: "Contacts" },
@@ -43,7 +44,7 @@ export function OperationsNav() {
       <div className="operations-nav-links">
         {items.map((item) => {
           const active = item.href === "/" ? pathname === "/" : pathname.startsWith(item.href);
-          return <Link key={item.href} href={item.href} className={active ? "operations-nav-link active" : "operations-nav-link"} aria-current={active ? "page" : undefined}>{item.label}</Link>;
+          return <Link key={item.href} href={item.href} className={`${active ? "operations-nav-link active" : "operations-nav-link"}${item.emphasis ? " operations-nav-aria" : ""}`} aria-current={active ? "page" : undefined}>{item.emphasis ? <span aria-hidden="true">✦</span> : null}{item.label}</Link>;
         })}
       </div>
       <div className="operations-nav-tools">

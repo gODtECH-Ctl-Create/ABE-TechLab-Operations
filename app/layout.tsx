@@ -23,6 +23,8 @@ import "./contacts/contact-density.css";
 import "./mobile-density.css";
 import "./ui-certification.css";
 import "./invoices/invoice.css";
+import "./auth.css";
+import "./product-ui.css";
 
 export const metadata: Metadata = {
   title: "ABE TechLab Operations",

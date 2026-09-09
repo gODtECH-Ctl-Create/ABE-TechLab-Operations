@@ -25,3 +25,18 @@ export async function approveStrategy(formData: FormData) { const { user } = awa
 export async function rejectStrategy(formData: FormData) { const { user } = await requireReviewer(); const id = String(formData.get("id") ?? "").trim(); if (!id) redirect("/approval?error=missing_id"); await decide("outreach_strategies", id, "archived", "outreach_strategy_rejected", user.id); revalidatePath("/approval"); revalidatePath("/outreach"); redirect("/approval?changed=1"); }
 export async function approveCampaign(formData: FormData) { const { user } = await requireReviewer(); const id = String(formData.get("id") ?? "").trim(); if (!id) redirect("/approval?error=missing_id"); await decide("campaigns", id, "approved", "campaign_approved", user.id); revalidatePath("/approval"); revalidatePath("/outreach"); redirect("/approval?changed=1"); }
 export async function rejectCampaign(formData: FormData) { const { user } = await requireReviewer(); const id = String(formData.get("id") ?? "").trim(); if (!id) redirect("/approval?error=missing_id"); await decide("campaigns", id, "cancelled", "campaign_rejected", user.id); revalidatePath("/approval"); revalidatePath("/outreach"); redirect("/approval?changed=1"); }
+
+async function decideAriaProposal(formData: FormData, status: "approved" | "rejected") {
+  const { supabase, user } = await requireReviewer();
+  const id = String(formData.get("id") ?? "").trim();
+  if (!id) redirect("/approval?error=missing_id");
+  const db = supabase as any;
+  const { error } = await db.from("aria_action_proposals").update({ status, reviewed_by: user.id, reviewed_at: new Date().toISOString() }).eq("id", id).eq("status", "pending");
+  if (error) redirect(`/approval?error=${encodeURIComponent(error.message)}`);
+  await db.from("audit_events").insert({ actor_type: "human", actor_id: user.id, action: `aria.proposal_${status}`, entity_type: "aria_action_proposal", entity_id: id, metadata: { decision: status } });
+  revalidatePath("/approval");
+  redirect("/approval?changed=1");
+}
+
+export async function approveAriaProposal(formData: FormData) { return decideAriaProposal(formData, "approved"); }
+export async function rejectAriaProposal(formData: FormData) { return decideAriaProposal(formData, "rejected"); }

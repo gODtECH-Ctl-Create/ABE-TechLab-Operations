@@ -40,7 +40,11 @@ export function getAiRuntimeMode(surface: AiRuntimeSurface = "aria_internal"): A
   return normalizeRuntimeMode(value, "off");
 }
 
-export function getProviderTimeoutMs() {
+export function getProviderTimeoutMs(task = "general") {
+  if (task.startsWith("aria_")) {
+    const value = Number(process.env.ARIA_PROVIDER_TIMEOUT_MS || 90000);
+    return Number.isFinite(value) ? Math.min(Math.max(Math.round(value), 1000), 120000) : 90000;
+  }
   const value = Number(process.env.AI_PROVIDER_TIMEOUT_MS || 15000);
   if (!Number.isFinite(value)) return 15000;
   return Math.min(Math.max(Math.round(value), 1000), 60000);
@@ -60,32 +64,34 @@ function parseProviderJson(raw: string, label: string) {
   }
 }
 
-function providerFetch(url: string, init: RequestInit) {
-  return fetch(url, { ...init, signal: AbortSignal.timeout(getProviderTimeoutMs()) });
+function providerFetch(url: string, init: RequestInit, timeoutMs: number) {
+  return fetch(url, { ...init, signal: AbortSignal.timeout(timeoutMs) });
 }
 
 export function isAiRuntimeEnabled(surface: AiRuntimeSurface) {
   return getAiRuntimeMode(surface) !== "off";
 }
 
-async function callOpenAiCompatible(config: ProviderConfig, prompt: string) {
+async function callOpenAiCompatible(config: ProviderConfig, prompt: string, timeoutMs: number, task: string) {
   const response = await providerFetch(`${config.baseUrl}/chat/completions`, {
     method: "POST",
     headers: { Authorization: `Bearer ${envKeyFor(config)}`, "Content-Type": "application/json" },
-    body: JSON.stringify({ model: modelFor(config), messages: [{ role: "user", content: prompt }], temperature: 0.2 }),
-  });
+    body: JSON.stringify({ model: modelFor(config), messages: [{ role: "user", content: prompt }], temperature: 0.2,
+      ...(config.name === "nvidia" && task.startsWith("aria_") ? { max_tokens: 2048, chat_template_kwargs: { enable_thinking: false } } : {}),
+    }),
+  }, timeoutMs);
   const raw = await response.text();
   if (!response.ok) throw new Error(`${config.label} returned ${response.status}: ${raw.slice(0, 500)}`);
   const data = parseProviderJson(raw, config.label);
   return { text: assertProviderText(data?.choices?.[0]?.message?.content, config.label), usage: { inputTokens: data?.usage?.prompt_tokens, outputTokens: data?.usage?.completion_tokens } };
 }
 
-async function callGemini(config: ProviderConfig, prompt: string) {
+async function callGemini(config: ProviderConfig, prompt: string, timeoutMs: number) {
   const response = await providerFetch(`https://generativelanguage.googleapis.com/v1beta/models/${modelFor(config)}:generateContent?key=${envKeyFor(config)}`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ contents: [{ role: "user", parts: [{ text: prompt }] }], tools: [{ google_search: {} }] }),
-  });
+  }, timeoutMs);
   const raw = await response.text();
   if (!response.ok) throw new Error(`${config.label} returned ${response.status}: ${raw.slice(0, 500)}`);
   const data = parseProviderJson(raw, config.label);
@@ -93,27 +99,29 @@ async function callGemini(config: ProviderConfig, prompt: string) {
   return { text: assertProviderText(text, config.label), usage: { inputTokens: data?.usageMetadata?.promptTokenCount, outputTokens: data?.usageMetadata?.candidatesTokenCount } };
 }
 
-async function callAgentRouter(config: ProviderConfig, prompt: string) {
+async function callAgentRouter(config: ProviderConfig, prompt: string, timeoutMs: number) {
   const response = await providerFetch(`${config.baseUrl}/domains/models/capabilities/chat-complete/execute`, {
     method: "POST",
     headers: { Authorization: `Bearer ${envKeyFor(config)}`, "Content-Type": "application/json" },
     body: JSON.stringify({ model: modelFor(config), messages: [{ role: "user", content: prompt }], allowFallback: true }),
-  });
+  }, timeoutMs);
   const raw = await response.text();
   if (!response.ok) throw new Error(`${config.label} returned ${response.status}: ${raw.slice(0, 500)}`);
   const data = parseProviderJson(raw, config.label);
   return { text: assertProviderText(data?.completionText ?? data?.text ?? data?.choices?.[0]?.message?.content, config.label), usage: { inputTokens: data?.usage?.inputTokens, outputTokens: data?.usage?.outputTokens } };
 }
 
-async function callProvider(config: ProviderConfig, prompt: string) {
-  if (config.name === "gemini") return callGemini(config, prompt);
-  if (config.name === "agentrouter") return callAgentRouter(config, prompt);
-  return callOpenAiCompatible(config, prompt);
+async function callProvider(config: ProviderConfig, prompt: string, timeoutMs: number, task: string) {
+  if (config.name === "gemini") return callGemini(config, prompt, timeoutMs);
+  if (config.name === "agentrouter") return callAgentRouter(config, prompt, timeoutMs);
+  return callOpenAiCompatible(config, prompt, timeoutMs, task);
 }
 
 export async function generateWithFailover(prompt: string, task = "general", requestId?: string): Promise<AiRouterResult> {
   const attempted: ProviderName[] = [];
   let lastError: Error | undefined;
+  // Bound the whole ARIA provider chain, leaving time for auth, data and audit writes.
+  const deadline = task.startsWith("aria_") ? Date.now() + 240000 : Infinity;
   const supabase = (() => {
     try { return createSupabaseServiceClient(); }
     catch { return null; }
@@ -121,14 +129,19 @@ export async function generateWithFailover(prompt: string, task = "general", req
 
   for (const config of PROVIDERS) {
     if (!configured(config)) continue;
+    const timeoutMs = Math.min(getProviderTimeoutMs(task), deadline - Date.now());
+    if (timeoutMs < 1000) break;
     attempted.push(config.name);
     const started = Date.now();
     try {
-      const result = await callProvider(config, prompt);
+      const result = await callProvider(config, prompt, timeoutMs, task);
       if (supabase) await (supabase as any).from("ai_provider_usage").insert({ provider: config.name, task, status: "success", duration_ms: Date.now() - started, input_tokens: result.usage?.inputTokens ?? null, output_tokens: result.usage?.outputTokens ?? null, request_id: requestId ?? null });
       return { text: result.text, provider: config.name, model: modelFor(config), fallbackUsed: attempted.length > 1, attempted, usage: result.usage };
     } catch (error) {
       lastError = error instanceof Error ? error : new Error(String(error));
+      if (lastError.name === "TimeoutError" || lastError.name === "AbortError") {
+        lastError = new Error(`${config.label} did not finish within ${Math.round(timeoutMs / 1000)} seconds. Please retry shortly; if this persists, check provider latency or configure a fallback provider.`);
+      }
       if (supabase) await (supabase as any).from("ai_provider_usage").insert({ provider: config.name, task, status: "failed", duration_ms: Date.now() - started, error_message: lastError.message.slice(0, 1000), request_id: requestId ?? null });
     }
   }
