@@ -51,6 +51,8 @@ export default async function AboutOperationsPage() {
       <h2>What each workspace area means</h2>
       <div className="about-table-wrap card"><table className="about-table"><thead><tr><th>Area</th><th>Purpose</th><th>Primary question</th></tr></thead><tbody>
         <tr><td>Dashboard</td><td>Operational overview.</td><td>What needs attention right now?</td></tr>
+        <tr><td>ARIA</td><td>Generate a governed brief from live Operations records.</td><td>What should we understand or prioritize?</td></tr>
+        <tr><td>Client Inbox</td><td>Manage AI-assisted customer conversations and human handoffs.</td><td>Which client conversation needs attention?</td></tr>
         <tr><td>Research</td><td>Find and understand potential organisations.</td><td>Who should we investigate?</td></tr>
         <tr><td>Leads</td><td>Manage active business-development records.</td><td>Who are we working on?</td></tr>
         <tr><td>Organisations</td><td>Maintain company/account context.</td><td>What do we know about this organisation?</td></tr>
@@ -80,7 +82,7 @@ export default async function AboutOperationsPage() {
         <p><strong>Humans own accountability.</strong> People remain responsible for strategy, commercial decisions, relationship management, exceptions, sensitive actions and final approval where required.</p>
         <p><strong>AI provides assistance.</strong> The AI layer can support research, information extraction, qualification, scoring, summaries, drafting and recommendations.</p>
         <p><strong>Automation must remain understandable.</strong> Automated recommendations should be explainable enough for an operator or reviewer to understand what is being proposed and why.</p>
-        <p><strong>AI execution is currently paused.</strong> The core Operations workflows remain usable without active AI provider execution. The AI Control Centre is intentionally kept out of the main navigation and is accessible through Profile → Settings → Integrations → AI Providers.</p>
+        <p><strong>AI execution is governed by runtime mode.</strong> ARIA remains read-only in advisory mode, while the Client Inbox is a separate customer-conversation surface. Provider status and runtime controls remain available through Profile → Settings → Integrations → AI Providers.</p>
       </div>
     </section>
 
@@ -127,6 +129,8 @@ export default async function AboutOperationsPage() {
       <h2>Where to go when you need something</h2>
       <div className="about-table-wrap card"><table className="about-table"><thead><tr><th>I need to…</th><th>Go to…</th></tr></thead><tbody>
         <tr><td>Find a potential organisation</td><td>Research</td></tr>
+        <tr><td>Generate an internal operations brief</td><td>ARIA</td></tr>
+        <tr><td>Review a customer conversation or handoff</td><td>Client Inbox</td></tr>
         <tr><td>Work an active prospect or enquiry</td><td>Leads</td></tr>
         <tr><td>Understand a company account</td><td>Organisations</td></tr>
         <tr><td>Find or manage a person</td><td>Contacts</td></tr>
