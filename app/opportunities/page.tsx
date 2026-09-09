@@ -4,6 +4,7 @@ import { createOpportunity, updateOpportunityStage } from "./actions";
 import type { Database } from "@/lib/data/supabase/database.types";
 import Link from "next/link";
 import { RecordOverflowMenu } from "@/components/record-overflow-menu";
+import { PipelineNavigation } from "@/components/workspace-navigation";
 
 type Opportunity = Database["public"]["Tables"]["opportunities"]["Row"];
 type Organisation = Database["public"]["Tables"]["organisations"]["Row"];
@@ -33,6 +34,7 @@ export default async function OpportunitiesPage({ searchParams }: Props) {
   const created = params.created === "1"; const updated = params.updated === "1"; const errorMessage = typeof params.error === "string" ? params.error : null;
   return <main className="page-shell">
     <header className="page-header"><div><div className="eyebrow">CRM · Sales pipeline</div><h1>Opportunities</h1><p>Track real commercial opportunities from discovery through close. Every active opportunity should have an owner, a next action, and a due date.</p></div><a className="ghost-button" href="/">← Dashboard</a></header>
+    <PipelineNavigation active="Opportunities" />
     {created && <div className="success-banner"><strong>Opportunity created.</strong><span>The opportunity is now in the live pipeline.</span></div>}
     {updated && <div className="success-banner"><strong>Opportunity updated.</strong><span>The latest stage, owner, and next-action changes have been recorded.</span></div>}
     {errorMessage && <div className="error-banner"><strong>Could not complete the action.</strong><span>{errorMessage === "next_action_owner_required" ? "Active opportunities require an owner, next action, and due date." : errorMessage}</span></div>}
