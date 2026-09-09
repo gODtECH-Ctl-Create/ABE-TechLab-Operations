@@ -12,22 +12,24 @@ export default async function AiProviderSettingsPage() {
   if (!["admin", "operator", "reviewer"].includes(role ?? "")) redirect("/");
 
   const dashboard = await getAiProviderDashboard();
-  const { providers, agentRouter } = dashboard;
+  const { providers, agentRouter, mode, assistantMode } = dashboard;
   const configured = providers.filter((provider) => provider.configured).length;
   const failures = providers.reduce((sum, provider) => sum + provider.failures24h, 0);
   const requests = providers.reduce((sum, provider) => sum + provider.requests24h, 0);
+  const modeLabel = mode === "advisory" ? "Advisory" : mode === "action" ? "Action" : "Paused";
 
   return <main className="page-shell ai-control">
     <header className="page-header">
-      <div><div className="eyebrow">Settings · Integrations · AI Providers</div><h1>AI Control Centre</h1><p>Review provider posture, routing order, observed usage and failures. Model execution remains intentionally paused.</p></div>
+      <div><div className="eyebrow">Settings · Integrations · AI Providers</div><h1>AI Control Centre</h1><p>Review provider posture, routing order, observed usage and failures. Model execution remains governed by the runtime mode.</p></div>
       <a className="ghost-button" href="/settings/integrations">← Integrations</a>
     </header>
     <section className="lead-summary">
       <div className="summary-card"><span>Configured</span><strong>{configured}/{providers.length}</strong></div>
       <div className="summary-card"><span>Requests / 24h</span><strong>{requests}</strong></div>
       <div className="summary-card"><span>Failures / 24h</span><strong>{failures}</strong></div>
-      <div className="summary-card"><span>Execution</span><strong>Paused</strong></div>
+      <div className="summary-card"><span>ARIA</span><strong>{modeLabel}</strong></div>
     </section>
+    <section className="table-card"><div className="section-heading"><div><div className="eyebrow">Runtime surfaces</div><h2>Independent execution controls</h2><p>ARIA and the Client Assistant can be paused independently.</p></div></div><div className="ai-rule-grid"><article className="ai-rule"><strong>ARIA</strong><p>{mode === "off" ? "Paused" : mode === "advisory" ? "Advisory" : "Action"}</p></article><article className="ai-rule"><strong>Client Assistant</strong><p>{assistantMode === "off" ? "Paused" : assistantMode === "advisory" ? "Advisory" : "Action"}</p></article></div></section>
     <section className="table-card">
       <div className="section-heading"><div><div className="eyebrow">Provider pool</div><h2>Provider posture</h2><p>Credentials are never displayed here. Missing providers are skipped when execution is enabled.</p></div></div>
       <div className="ai-provider-list">{providers.map((provider) => {
@@ -43,6 +45,6 @@ export default async function AiProviderSettingsPage() {
         </div>;
       })}</div>
     </section>
-    <section className="table-card"><div className="section-heading"><div><div className="eyebrow">Governance</div><h2>AI operating rules</h2></div></div><div className="ai-rule-grid"><article className="ai-rule"><strong>Propose</strong><p>AI may produce structured recommendations when execution is enabled.</p></article><article className="ai-rule"><strong>Review</strong><p>Humans remain the gate for consequential workflow actions.</p></article><article className="ai-rule"><strong>Execute</strong><p>Only approved actions reach external providers.</p></article></div>{agentRouter.error && <div className="ai-warning ai-warning-spaced"><div><strong>AgentRouter warning</strong><span>{agentRouter.error}</span></div></div>}</section>
+    <section className="table-card"><div className="section-heading"><div><div className="eyebrow">Governance</div><h2>AI operating rules</h2></div></div><div className="ai-rule-grid"><article className="ai-rule"><strong>Propose</strong><p>AI may produce structured recommendations in advisory mode.</p></article><article className="ai-rule"><strong>Review</strong><p>Humans remain the gate for consequential workflow actions.</p></article><article className="ai-rule"><strong>Execute</strong><p>Only approved actions reach external providers. Action mode is reserved for a later phase.</p></article></div>{agentRouter.error && <div className="ai-warning ai-warning-spaced"><div><strong>AgentRouter warning</strong><span>{agentRouter.error}</span></div></div>}</section>
   </main>;
 }

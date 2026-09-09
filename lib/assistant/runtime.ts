@@ -1,4 +1,4 @@
-import { generateWithFailover } from "@/lib/ai/provider-router";
+import { generateAi } from "@/lib/ai/gateway";
 import { createSupabaseServiceClient } from "@/lib/supabase/service";
 
 export type AssistantChannel = "website_chat" | "whatsapp" | "voice_call" | "email";
@@ -39,7 +39,7 @@ async function loadContext(leadId: string, conversationId: string) {
     db.from("leads").select("id, organisation_id, service_interest, problem_summary, preferred_contact_channel, status").eq("id", leadId).single(),
     db.from("assistant_messages").select("id, sender_type, content, created_at, message_type, metadata").eq("conversation_id", conversationId).order("created_at", { ascending: false }).limit(40),
     db.from("assistant_requirements").select("key, value, status, confidence").eq("lead_id", leadId).order("updated_at", { ascending: false }).limit(100),
-    db.from("assistant_conversations").select("workflow_id, current_step_id").eq("id", conversationId).single(),
+    db.from("assistant_conversations").select("workflow_id, current_step_id, ai_enabled").eq("id", conversationId).single(),
   ]);
   if (leadError) throw leadError; if (messagesError) throw messagesError; if (requirementsError) throw requirementsError; if (conversationError) throw conversationError;
   let workflowName: string | null = null; let stepName: string | null = null;
@@ -50,7 +50,7 @@ async function loadContext(leadId: string, conversationId: string) {
     ]);
     workflowName = workflowRow?.name ?? null; stepName = stepRow?.name ?? null;
   }
-  return { lead, messages: (messages ?? []).reverse(), requirements: requirements ?? [], workflowName, stepName };
+  return { lead, messages: (messages ?? []).reverse(), requirements: requirements ?? [], workflowName, stepName, aiEnabled: Boolean(conversation?.ai_enabled) };
 }
 
 function buildPrompt(context: Awaited<ReturnType<typeof loadContext>>) {
@@ -60,14 +60,17 @@ function buildPrompt(context: Awaited<ReturnType<typeof loadContext>>) {
 
 export async function handleAssistantMessage({ leadId, channel, message, providerRequestId }: { leadId: string; channel: AssistantChannel; message?: string; providerRequestId?: string }) {
   const supabase = createSupabaseServiceClient(); const db = supabase as any; const conversation = await ensureConversation(leadId, channel);
+  if (conversation.ai_enabled === false) throw new Error("Client Assistant is disabled for this conversation.");
   if (message) {
     const { error } = await db.from("assistant_messages").insert({ conversation_id: conversation.id, sender_type: "client", content: clean(message), message_type: channel === "voice_call" ? "voice_transcript" : "text", metadata: { channel } });
     if (error) throw error;
   }
-  const context = await loadContext(leadId, conversation.id); const requestId = providerRequestId || crypto.randomUUID(); const result = await generateWithFailover(buildPrompt(context), "assistant_conversation", requestId);
-  const { data: assistantMessage, error: assistantError } = await db.from("assistant_messages").insert({ conversation_id: conversation.id, sender_type: "assistant", content: clean(result.text), message_type: "text", metadata: { provider: result.provider, model: result.model, fallback_used: result.fallbackUsed, attempted: result.attempted } }).select("id, content, created_at").single();
+  const context = await loadContext(leadId, conversation.id);
+  const requestId = providerRequestId || crypto.randomUUID();
+  const result = await generateAi({ surface: "client_assistant", prompt: buildPrompt(context), task: "assistant_conversation", requestId });
+  const { data: assistantMessage, error: assistantError } = await db.from("assistant_messages").insert({ conversation_id: conversation.id, sender_type: "assistant", content: clean(result.text), message_type: "text", metadata: { provider: result.provider, model: result.model, fallback_used: result.fallbackUsed, attempted: result.attempted, surface: result.surface, request_id: requestId } }).select("id, content, created_at").single();
   if (assistantError || !assistantMessage) throw assistantError ?? new Error("Unable to save assistant message");
   await db.from("assistant_conversations").update({ status: "waiting_client", last_message_at: new Date().toISOString(), updated_at: new Date().toISOString() }).eq("id", conversation.id);
-  await db.from("audit_events").insert({ actor_type: "aria", actor_id: null, action: "assistant_message_generated", entity_type: "assistant_conversation", entity_id: conversation.id, metadata: { lead_id: leadId, channel, provider: result.provider, model: result.model, request_id: requestId } });
+  await db.from("audit_events").insert({ actor_type: "system", actor_id: null, action: "assistant_message_generated", entity_type: "assistant_conversation", entity_id: conversation.id, metadata: { lead_id: leadId, channel, provider: result.provider, model: result.model, request_id: requestId, surface: result.surface } });
   return { conversationId: conversation.id, message: assistantMessage, provider: result.provider, model: result.model };
 }
