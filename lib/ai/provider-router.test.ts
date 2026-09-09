@@ -10,6 +10,7 @@ const ENV_KEYS = [
   "ARIA_AI_RUNTIME_MODE",
   "CLIENT_ASSISTANT_AI_RUNTIME_MODE",
   "AI_PROVIDER_TIMEOUT_MS",
+  "ARIA_PROVIDER_TIMEOUT_MS",
   "NVIDIA_API_KEY",
   "GEMINI_API_KEY",
   "GROK_API_KEY",
@@ -55,5 +56,41 @@ describe("AI runtime controls", () => {
     }), { status: 200 })));
 
     await expect(generateWithFailover("test prompt")).rejects.toThrow("returned an empty response");
+  });
+
+  it("gives ARIA an isolated, bounded timeout", () => {
+    process.env.AI_PROVIDER_TIMEOUT_MS = "15000";
+    expect(getProviderTimeoutMs("aria_operations_brief")).toBe(90000);
+    expect(getProviderTimeoutMs()).toBe(15000);
+    process.env.ARIA_PROVIDER_TIMEOUT_MS = "999999";
+    expect(getProviderTimeoutMs("aria_operations_brief")).toBe(120000);
+    process.env.ARIA_PROVIDER_TIMEOUT_MS = "invalid";
+    expect(getProviderTimeoutMs("aria_operations_brief")).toBe(90000);
+  });
+
+  it("bounds NVIDIA briefing output and passes the ARIA timeout to fetch", async () => {
+    process.env.NVIDIA_API_KEY = "test-key";
+    const timeout = vi.spyOn(AbortSignal, "timeout");
+    const fetchMock = vi.fn().mockImplementation(() => Promise.resolve(new Response(JSON.stringify({ choices: [{ message: { content: "Brief" } }] }))));
+    vi.stubGlobal("fetch", fetchMock);
+    await generateWithFailover("brief", "aria_operations_brief");
+    expect(timeout).toHaveBeenCalledWith(90000);
+    expect(JSON.parse(fetchMock.mock.calls[0][1].body).max_tokens).toBe(4096);
+    await generateWithFailover("client message");
+    expect(JSON.parse(fetchMock.mock.calls[1][1].body).max_tokens).toBeUndefined();
+    timeout.mockRestore();
+  });
+
+  it("reports timeout duration and continues to the next configured provider", async () => {
+    process.env.NVIDIA_API_KEY = "test-key";
+    const fetchMock = vi.fn().mockRejectedValue(new DOMException("timed out", "TimeoutError"));
+    vi.stubGlobal("fetch", fetchMock);
+    await expect(generateWithFailover("brief", "aria_operations_brief")).rejects.toThrow("NVIDIA NIM did not finish within 90 seconds");
+    process.env.OPENAI_API_KEY = "test-fallback";
+    fetchMock.mockReset().mockRejectedValueOnce(new DOMException("timed out", "TimeoutError"))
+      .mockResolvedValueOnce(new Response(JSON.stringify({ choices: [{ message: { content: "Fallback brief" } }] })));
+    const result = await generateWithFailover("brief", "aria_operations_brief");
+    expect(result.fallbackUsed).toBe(true);
+    expect(result.attempted).toEqual(["nvidia", "openai"]);
   });
 });

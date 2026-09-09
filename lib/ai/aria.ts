@@ -41,7 +41,7 @@ function buildPrompt(toolResults: ToolResult[]) {
     "Do not invent financial figures, clients, project status, dates, people, or capabilities.",
     "Clearly distinguish observations from recommendations.",
     "Do not claim any external or database action is completed. Consequential actions require human approval.",
-    "Prepare a concise, decision-ready operations briefing for the operator.",
+    "Prepare a concise, decision-ready operations briefing for the operator in no more than 600 words. Summarize patterns rather than listing every record.",
     "Include: current state, urgent attention items, commercial and finance signals, pending human decisions, and 3 prioritized recommendations.",
     "If a data set is empty, say so instead of filling the gap.",
     "Operations data:",
