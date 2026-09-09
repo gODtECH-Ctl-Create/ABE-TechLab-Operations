@@ -4,6 +4,7 @@ import { updateOpportunity } from "../actions";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { RecordActions } from "@/components/record-actions";
 import type { Database } from "@/lib/data/supabase/database.types";
+import { PipelineNavigation } from "@/components/workspace-navigation";
 
 type Opportunity = Database["public"]["Tables"]["opportunities"]["Row"];
 type Organisation = Database["public"]["Tables"]["organisations"]["Row"];
@@ -31,6 +32,7 @@ export default async function OpportunityDetailPage({ params, searchParams }: Pr
   const error = typeof query.error === "string" ? query.error : null; const updated = query.updated === "1"; const overdue = !!row.next_action_due_at && new Date(row.next_action_due_at).getTime() < Date.now() && !["won", "lost"].includes(row.stage);
   return <main className="page-shell">
     <header className="page-header"><div><div className="eyebrow">CRM · Opportunity</div><h1>{row.name}</h1><p>{row.description || "No opportunity description has been added yet."}</p></div><div className="header-actions"><Link className="ghost-button" href="/opportunities">← Opportunities</Link><RecordActions entity="opportunity" id={row.id} editHref="#opportunity-edit" /></div></header>
+    <PipelineNavigation active="Opportunities" />
     {updated && <div className="success-banner"><strong>Opportunity updated.</strong><span>Ownership, next action and pipeline state have been recorded.</span></div>}
     {error && <div className="error-banner"><strong>Could not update opportunity.</strong><span>{error === "next_action_owner_required" ? "Active opportunities require an owner, next action, and due date." : error}</span></div>}
     <section className="lead-summary"><div className="summary-card"><span>Stage</span><strong>{labels[row.stage as (typeof stages)[number]] ?? row.stage}</strong></div><div className="summary-card"><span>Value</span><strong>{row.value === null ? "Not set" : money.format(Number(row.value))}</strong></div><div className="summary-card"><span>Probability</span><strong>{row.probability === null ? "--" : `${row.probability}%`}</strong></div><div className="summary-card"><span>Next action due</span><strong className={overdue ? "danger-text" : undefined}>{row.next_action_due_at ? new Date(row.next_action_due_at).toLocaleDateString() : "Not scheduled"}</strong></div></section>

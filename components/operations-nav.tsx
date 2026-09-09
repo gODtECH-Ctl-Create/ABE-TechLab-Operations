@@ -6,19 +6,14 @@ import { createSupabaseBrowserClient } from "@/lib/supabase/client";
 import { useState } from "react";
 
 const items = [
-  { href: "/", label: "Dashboard" },
-  { href: "/leads", label: "Leads" },
-  { href: "/opportunities", label: "Opportunities" },
-  { href: "/outreach", label: "Outreach" },
-  { href: "/follow-ups", label: "Follow-ups" },
-  { href: "/invoices", label: "Invoices" },
-  { href: "/aria", label: "ARIA", emphasis: true },
-  { href: "/assistant", label: "Client Inbox" },
-  { href: "/approval", label: "Approval Queue" },
-  { href: "/prospecting", label: "Research" },
-  { href: "/contacts", label: "Contacts" },
-  { href: "/organisations", label: "Organisations" },
-  { href: "/reports", label: "Reports" },
+  { href: "/", label: "Dashboard", matches: ["/"] },
+  { href: "/aria", label: "ARIA", emphasis: true, matches: ["/aria", "/prospecting"] },
+  { href: "/organisations", label: "Accounts", matches: ["/organisations", "/contacts", "/accounts"] },
+  { href: "/leads", label: "Pipeline", matches: ["/leads", "/opportunities", "/attention"] },
+  { href: "/outreach", label: "Outreach", matches: ["/outreach", "/assistant", "/follow-ups"] },
+  { href: "/invoices", label: "Finance", matches: ["/invoices"] },
+  { href: "/approval", label: "Approvals", matches: ["/approval", "/approvals"] },
+  { href: "/reports", label: "Reports", matches: ["/reports"] },
 ];
 
 export function OperationsNav() {
@@ -43,7 +38,7 @@ export function OperationsNav() {
       <Link href="/" className="operations-nav-brand" aria-label="ABE TechLab Operations home"><span className="operations-nav-dot" /> ABE TechLab <span>Operations</span></Link>
       <div className="operations-nav-links">
         {items.map((item) => {
-          const active = item.href === "/" ? pathname === "/" : pathname.startsWith(item.href);
+          const active = item.matches.some((prefix) => prefix === "/" ? pathname === "/" : pathname.startsWith(prefix));
           return <Link key={item.href} href={item.href} className={`${active ? "operations-nav-link active" : "operations-nav-link"}${item.emphasis ? " operations-nav-aria" : ""}`} aria-current={active ? "page" : undefined}>{item.emphasis ? <span aria-hidden="true">✦</span> : null}{item.label}</Link>;
         })}
       </div>

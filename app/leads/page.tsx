@@ -4,6 +4,7 @@ import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { createLead, updateLeadStatus } from "./actions";
 import { RecordOverflowMenu } from "@/components/record-overflow-menu";
 import type { Database } from "@/lib/data/supabase/database.types";
+import { PipelineNavigation } from "@/components/workspace-navigation";
 
 type Lead = Database["public"]["Tables"]["leads"]["Row"];
 type Organisation = Database["public"]["Tables"]["organisations"]["Row"];
@@ -48,6 +49,7 @@ export default async function LeadsPage({ searchParams }: Props) {
         <div><div className="eyebrow">CRM · Lead management</div><h1>{priorityFilter ? "High-priority leads" : "Leads"}</h1><p>{priorityFilter ? "Leads with a fit score of 85 or above, prioritized for immediate review." : "Manage the real lead pipeline. Every change is stored in Supabase and recorded in the audit trail."}</p></div>
         <div className="header-actions"><Link className="ghost-button" href="/">← Dashboard</Link>{priorityFilter && <Link className="text-link" href="/leads">View all leads →</Link>}</div>
       </header>
+      <PipelineNavigation active="Leads" />
 
       {created && <div className="success-banner"><strong>Lead created.</strong><span>The lead is now in the live pipeline.</span></div>}
       {updated && <div className="success-banner"><strong>Lead updated.</strong><span>The status change has been recorded.</span></div>}

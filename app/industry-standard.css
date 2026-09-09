@@ -1,0 +1,17 @@
+/* Product-wide interaction and density standard. Imported last. */
+:where(.page-shell,.main) :where(.primary-button,.ghost-button,.secondary-button){width:auto;min-height:38px;padding:8px 13px;border-radius:9px;font-size:11px;line-height:1.2;white-space:normal;text-align:center}
+:where(.page-shell,.main) :where(button,a,input,select,textarea):disabled{cursor:not-allowed;opacity:.56;transform:none!important}
+:where(.page-shell,.main) form>.primary-button{justify-self:start;min-width:120px}
+:where(.page-shell,.main) :where(input,select,textarea){max-width:100%}
+:where(.page-shell,.main) :where(h1,h2,h3,p,strong,span,small,td,th){overflow-wrap:anywhere}
+:where(.page-shell,.main) :where(.card,.table-card,.summary-card,.metric-card){isolation:isolate}
+:where(.page-shell,.main)>.card{margin-bottom:14px}
+:where(.page-shell,.main) table{width:100%;border-collapse:collapse}
+:where(.page-shell,.main) th{text-align:left;font-size:9px;letter-spacing:.06em;text-transform:uppercase;color:#7d848c}
+:where(.page-shell,.main) td{font-size:11px;line-height:1.5}
+:where(.page-shell,.main) :where(th,td){padding:11px 12px;border-bottom:1px solid #e9ecee;vertical-align:top}
+:where(.page-shell,.main) tbody tr:hover{background:#fafbfb}
+:where(.page-shell,.main) .success-banner,:where(.page-shell,.main) .error-banner{align-items:flex-start;line-height:1.5}
+:where(.page-shell,.main) .success-banner strong,:where(.page-shell,.main) .error-banner strong{flex:0 0 auto}
+:where(.page-shell,.main) .status-chip{max-width:100%;overflow:hidden;text-overflow:ellipsis}
+@media(max-width:440px){:where(.page-shell,.main) :where(.primary-button,.ghost-button,.secondary-button){width:100%}:where(.page-shell,.main) form>.primary-button{justify-self:stretch}:where(.page-shell,.main) :where(th,td){padding:10px 9px}}

@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { getLeadHealth, getOpportunityHealth, recordHealthLabels, type RecordHealth } from "@/lib/workflow/record-health";
 import type { Database } from "@/lib/data/supabase/database.types";
+import { PipelineNavigation } from "@/components/workspace-navigation";
 
 type Lead = Database["public"]["Tables"]["leads"]["Row"];
 type Opportunity = Database["public"]["Tables"]["opportunities"]["Row"];
@@ -34,6 +35,7 @@ export default async function AttentionPage() {
 
   return <main className="page-shell">
     <header className="page-header"><div><div className="eyebrow">Operations · Needs attention</div><h1>Needs attention</h1><p>Stale, overdue, unassigned, and incomplete active work. Nothing is changed automatically.</p></div><Link className="ghost-button" href="/">← Dashboard</Link></header>
+    <PipelineNavigation active="Needs attention" />
     <section className="lead-summary"><div className="summary-card"><span>Overdue</span><strong>{counts.overdue}</strong></div><div className="summary-card"><span>Needs action</span><strong>{counts.needs_action}</strong></div><div className="summary-card"><span>Stale</span><strong>{counts.stale}</strong></div><div className="summary-card"><span>Unassigned</span><strong>{counts.unassigned}</strong></div></section>
     <section className="card attention-list-card"><div className="section-heading"><div><div className="eyebrow">Review queue</div><h2>Records requiring attention</h2><p>Open the record and decide whether to update, follow up, nurture, reassign, or close it.</p></div><span className="badge">{items.length} items</span></div>
       {items.length === 0 ? <div className="empty-stage"><strong>Everything is on track</strong><span>No active leads or opportunities currently meet the stale/overdue attention rules.</span></div> : <div className="compact-list">{items.map((item) => <article className="attention-row" key={`${item.type}-${item.id}`}><div><div className="attention-row-title"><strong>{item.name}</strong><span className={badgeClass(item.health)}>{recordHealthLabels[item.health]}</span></div><span>{item.type} · {item.action ?? "No next action recorded"}{item.due ? ` · Due ${new Date(item.due).toLocaleString()}` : ""}</span></div><Link className="text-link" href={item.type === "Lead" ? `/leads/${item.id}` : `/opportunities/${item.id}`}>Open →</Link></article>)}</div>}

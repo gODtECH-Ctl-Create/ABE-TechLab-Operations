@@ -2,6 +2,7 @@ import { redirect } from "next/navigation";
 import Link from "next/link";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { createFollowUp, updateFollowUpStatus } from "./actions";
+import { OutreachNavigation } from "@/components/workspace-navigation";
 
 type FollowUp = { id: string; campaign_message_id: string; lead_id: string; scheduled_for: string; status: string; blocked_reason: string | null; created_at: string };
 type Message = { id: string; campaign_id: string; stage: string; subject: string | null; body: string; status: string };
@@ -45,6 +46,7 @@ export default async function FollowUpsPage({ searchParams }: { searchParams: Pr
 
   return <main className="page-shell">
     <header className="page-header"><div><div className="eyebrow">Revenue engine · Follow-up</div><h1>Follow-ups</h1><p>Track the next human-controlled action for active outreach. Nothing is sent automatically.</p></div><Link className="ghost-button" href="/">← Dashboard</Link></header>
+    <OutreachNavigation active="Follow-ups" />
     {created && <div className="success-banner"><strong>Follow-up created.</strong><span>The next action is now visible in the Operations queue.</span></div>}
     {updated && <div className="success-banner"><strong>Follow-up updated.</strong><span>The status change was recorded in the audit trail.</span></div>}
     {error && <div className="error-banner"><strong>Could not complete the follow-up action.</strong><span>{error === "required" ? "Select a message, lead, and scheduled date." : error}</span></div>}
