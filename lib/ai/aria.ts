@@ -3,6 +3,7 @@ import { createSupabaseServiceClient } from "@/lib/supabase/service";
 import { generateAi } from "@/lib/ai/gateway";
 import { getAiRuntimeMode } from "@/lib/ai/provider-router";
 import { addInvoiceTotals, type InvoiceRow } from "@/lib/ai/finance";
+import { getPendingApprovals } from "@/lib/ai/approvals";
 
 type ToolContext = { userId: string };
 type ToolResult = { name: string; result: unknown };
@@ -16,11 +17,11 @@ async function runTools(context: ToolContext): Promise<ToolResult[]> {
     db.from("opportunities").select("id,organisation_id,name,stage,value,currency,probability,expected_close_date,owner_id,next_action,next_action_due_at,updated_at").order("updated_at", { ascending: false }).limit(100),
     db.from("invoices").select("id,invoice_number,issue_date,due_date,status,currency,client_company,project,amount_paid,tax,created_at,updated_at,invoice_items(quantity,unit_price)").order("created_at", { ascending: false }).limit(100),
     db.from("audit_events").select("id,actor_type,action,entity_type,entity_id,metadata,created_at").order("created_at", { ascending: false }).limit(20),
-    db.from("approval_queue").select("id,title,entity_type,entity_id,action_type,proposed_by,status,created_at,updated_at").eq("status", "pending").order("created_at", { ascending: false }).limit(50),
+    getPendingApprovals(supabase),
   ]);
 
-  for (const item of [leads, opportunities, invoices, activities, approvals]) {
-    if (item.error) throw item.error;
+  for (const [source, item] of [["leads", leads], ["opportunities", opportunities], ["invoices", invoices], ["recent activity", activities]] as const) {
+    if (item.error) throw new Error(`ARIA could not load ${source}. Please contact an administrator.`, { cause: item.error });
   }
 
   return [
@@ -28,7 +29,7 @@ async function runTools(context: ToolContext): Promise<ToolResult[]> {
     { name: "get_opportunities", result: opportunities.data ?? [] },
     { name: "get_invoices", result: addInvoiceTotals((invoices.data ?? []) as InvoiceRow[]) },
     { name: "get_recent_activity", result: activities.data ?? [] },
-    { name: "get_pending_approvals", result: approvals.data ?? [] },
+    { name: "get_pending_approvals", result: approvals },
     { name: "get_runtime", result: { mode: getAiRuntimeMode("aria_internal"), userId: context.userId } },
   ];
 }
@@ -71,7 +72,7 @@ export async function runAriaBrief(userId: string) {
     metadata: { tool_count: toolResults.length },
   }).select("id").single();
 
-  if (runError || !run) throw runError ?? new Error("Unable to create AI run record");
+  if (runError || !run) throw new Error("ARIA could not create its audit record. Please contact an administrator.", { cause: runError });
 
   try {
     const result = await generateAi({
