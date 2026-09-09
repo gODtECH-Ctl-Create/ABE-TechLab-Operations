@@ -2,7 +2,7 @@ import { redirect } from "next/navigation";
 import Link from "next/link";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import type { Database } from "@/lib/data/supabase/database.types";
-import { approveStrategy, rejectStrategy, approveCampaign, rejectCampaign } from "./actions";
+import { approveStrategy, rejectStrategy, approveCampaign, rejectCampaign, approveAriaProposal, rejectAriaProposal } from "./actions";
 
 type Props = { searchParams: Promise<Record<string, string | string[] | undefined>> };
 type Strategy = Database["public"]["Tables"]["outreach_strategies"]["Row"];
@@ -10,6 +10,7 @@ type Campaign = Database["public"]["Tables"]["campaigns"]["Row"];
 type Message = Database["public"]["Tables"]["campaign_messages"]["Row"];
 type Lead = Database["public"]["Tables"]["leads"]["Row"];
 const labels: Record<string, string> = { draft: "Draft", needs_review: "Needs review", approved: "Approved", archived: "Archived" };
+type AriaProposal = { id: string; proposal_type: string; title: string; description: string; rationale: string | null; target_label: string | null; status: string; created_at: string };
 
 export default async function ApprovalPage({ searchParams }: Props) {
   const params = await searchParams;
@@ -20,15 +21,18 @@ export default async function ApprovalPage({ searchParams }: Props) {
   const userRole = String(role ?? "");
   if (!["admin", "operator", "reviewer"].includes(userRole)) redirect("/");
 
-  const [{ data: strategyRows, error: strategiesError }, { data: campaignRows, error: campaignsError }] = await Promise.all([
+  const [{ data: strategyRows, error: strategiesError }, { data: campaignRows, error: campaignsError }, { data: ariaRows, error: ariaError }] = await Promise.all([
     supabase.from("outreach_strategies").select("*").in("status", ["needs_review", "draft"]).order("created_at", { ascending: false }).limit(100),
     supabase.from("campaigns").select("*").in("status", ["draft"]).order("created_at", { ascending: false }).limit(100),
+    (supabase as any).from("aria_action_proposals").select("id,proposal_type,title,description,rationale,target_label,status,created_at").eq("status", "pending").order("created_at", { ascending: false }).limit(100),
   ]);
   if (strategiesError) throw new Error(strategiesError.message);
   if (campaignsError) throw new Error(campaignsError.message);
+  if (ariaError) throw new Error(ariaError.message);
 
   const pendingStrategies = (strategyRows ?? []) as Strategy[];
   const pendingCampaigns = (campaignRows ?? []) as Campaign[];
+  const ariaProposals = (ariaRows ?? []) as AriaProposal[];
   const leadIds = [...new Set([...pendingStrategies.map((s) => s.lead_id), ...pendingCampaigns.map((c) => c.lead_id)].filter(Boolean))] as string[];
   const strategyIds = [...new Set(pendingCampaigns.map((c) => c.strategy_id))];
   const campaignIds = pendingCampaigns.map((c) => c.id);
@@ -47,7 +51,7 @@ export default async function ApprovalPage({ searchParams }: Props) {
   const messagesByCampaign = new Map<string, Message[]>();
   for (const message of messages) messagesByCampaign.set(message.campaign_id, [...(messagesByCampaign.get(message.campaign_id) ?? []), message]);
 
-  const total = pendingStrategies.length + pendingCampaigns.length;
+  const total = pendingStrategies.length + pendingCampaigns.length + ariaProposals.length;
   const changed = params.changed === "1";
   const error = typeof params.error === "string" ? params.error : null;
   const canApprove = ["admin", "operator", "reviewer"].includes(userRole);
@@ -56,7 +60,11 @@ export default async function ApprovalPage({ searchParams }: Props) {
     <header className="page-header"><div><div className="eyebrow">Governance · Human review</div><h1>Approval Queue</h1><p>Review the business context and proposed action before anything moves forward.</p></div><Link className="ghost-button" href="/">← Dashboard</Link></header>
     {changed && <div className="success-banner"><strong>Queue updated.</strong><span>The decision has been recorded in the audit trail.</span></div>}
     {error && <div className="error-banner"><strong>Could not complete the review action.</strong><span>{error}</span></div>}
-    <section className="lead-summary"><div className="summary-card"><span>Pending items</span><strong>{total}</strong></div><div className="summary-card"><span>Strategies</span><strong>{pendingStrategies.length}</strong></div><div className="summary-card"><span>Campaigns</span><strong>{pendingCampaigns.length}</strong></div><div className="summary-card"><span>Mode</span><strong>Human</strong></div></section>
+    <section className="lead-summary"><div className="summary-card"><span>Pending items</span><strong>{total}</strong></div><div className="summary-card"><span>Strategies</span><strong>{pendingStrategies.length}</strong></div><div className="summary-card"><span>Campaigns</span><strong>{pendingCampaigns.length}</strong></div><div className="summary-card"><span>ARIA proposals</span><strong>{ariaProposals.length}</strong></div></section>
+
+    <section className="card"><div className="section-heading"><div><div className="eyebrow">ARIA · Proposed actions</div><h2>AI recommendations awaiting a decision</h2><p>Approval records the decision. Execution remains a separate controlled step.</p></div><span className="badge">{ariaProposals.length} pending</span></div>
+      <div className="approval-stack">{ariaProposals.length === 0 ? <div className="empty-stage"><strong>No ARIA proposals waiting</strong><span>Send a recommendation from the ARIA workspace when it needs human review.</span><Link href="/aria">Open ARIA →</Link></div> : ariaProposals.map((proposal) => <article className="approval-card" key={proposal.id}><div className="approval-card-head"><div><span className="approval-type">{proposal.proposal_type.replaceAll("_", " ")}</span><h3>{proposal.title}</h3><p>{proposal.target_label || "Operations proposal"}</p></div><span className="status-chip warning">Pending</span></div><div className="approval-context"><div><span>Proposed change</span><Link href="/aria">Review in ARIA →</Link></div><p>{proposal.description}</p>{proposal.rationale ? <small>Why ARIA suggested it: {proposal.rationale}</small> : null}</div><div className="approval-actions-row">{canApprove ? <><form action={approveAriaProposal}><input type="hidden" name="id" value={proposal.id} /><button className="primary-button" type="submit">Approve proposal</button></form><form action={rejectAriaProposal}><input type="hidden" name="id" value={proposal.id} /><button className="ghost-button" type="submit">Reject</button></form></> : <span className="status-chip">Review only</span>}</div></article>)}</div>
+    </section>
 
     <section className="card"><div className="section-heading"><div><div className="eyebrow">Outreach strategy</div><h2>Strategies awaiting review</h2><p>See the purpose, audience, angle and related lead before approving.</p></div><span className="badge">{pendingStrategies.length} pending</span></div>
       <div className="approval-stack">{pendingStrategies.length === 0 ? <div className="empty-stage"><strong>Nothing waiting here</strong><span>New strategies will appear when they need human review.</span></div> : pendingStrategies.map((strategy) => { const lead = strategy.lead_id ? leadById.get(strategy.lead_id) : null; return <article className="approval-card" key={strategy.id}>

@@ -23,7 +23,7 @@ export async function POST() {
       requestId: result.requestId,
       provider: result.provider,
       model: result.model,
-      text: result.text,
+      brief: result.brief,
       tools: result.toolResults.map((item) => item.name),
       fallbackUsed: result.fallbackUsed,
     });

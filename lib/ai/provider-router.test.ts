@@ -61,6 +61,7 @@ describe("AI runtime controls", () => {
   it("gives ARIA an isolated, bounded timeout", () => {
     process.env.AI_PROVIDER_TIMEOUT_MS = "15000";
     expect(getProviderTimeoutMs("aria_operations_brief")).toBe(90000);
+    expect(getProviderTimeoutMs("aria_follow_up")).toBe(90000);
     expect(getProviderTimeoutMs()).toBe(15000);
     process.env.ARIA_PROVIDER_TIMEOUT_MS = "999999";
     expect(getProviderTimeoutMs("aria_operations_brief")).toBe(120000);
@@ -75,7 +76,8 @@ describe("AI runtime controls", () => {
     vi.stubGlobal("fetch", fetchMock);
     await generateWithFailover("brief", "aria_operations_brief");
     expect(timeout).toHaveBeenCalledWith(90000);
-    expect(JSON.parse(fetchMock.mock.calls[0][1].body).max_tokens).toBe(4096);
+    expect(JSON.parse(fetchMock.mock.calls[0][1].body).max_tokens).toBe(2048);
+    expect(JSON.parse(fetchMock.mock.calls[0][1].body).chat_template_kwargs).toEqual({ enable_thinking: false });
     await generateWithFailover("client message");
     expect(JSON.parse(fetchMock.mock.calls[1][1].body).max_tokens).toBeUndefined();
     timeout.mockRestore();

@@ -41,7 +41,7 @@ export function getAiRuntimeMode(surface: AiRuntimeSurface = "aria_internal"): A
 }
 
 export function getProviderTimeoutMs(task = "general") {
-  if (task === "aria_operations_brief") {
+  if (task.startsWith("aria_")) {
     const value = Number(process.env.ARIA_PROVIDER_TIMEOUT_MS || 90000);
     return Number.isFinite(value) ? Math.min(Math.max(Math.round(value), 1000), 120000) : 90000;
   }
@@ -77,7 +77,7 @@ async function callOpenAiCompatible(config: ProviderConfig, prompt: string, time
     method: "POST",
     headers: { Authorization: `Bearer ${envKeyFor(config)}`, "Content-Type": "application/json" },
     body: JSON.stringify({ model: modelFor(config), messages: [{ role: "user", content: prompt }], temperature: 0.2,
-      ...(config.name === "nvidia" && task === "aria_operations_brief" ? { max_tokens: 4096 } : {}),
+      ...(config.name === "nvidia" && task.startsWith("aria_") ? { max_tokens: 2048, chat_template_kwargs: { enable_thinking: false } } : {}),
     }),
   }, timeoutMs);
   const raw = await response.text();
@@ -121,7 +121,7 @@ export async function generateWithFailover(prompt: string, task = "general", req
   const attempted: ProviderName[] = [];
   let lastError: Error | undefined;
   // Bound the whole ARIA provider chain, leaving time for auth, data and audit writes.
-  const deadline = task === "aria_operations_brief" ? Date.now() + 240000 : Infinity;
+  const deadline = task.startsWith("aria_") ? Date.now() + 240000 : Infinity;
   const supabase = (() => {
     try { return createSupabaseServiceClient(); }
     catch { return null; }
