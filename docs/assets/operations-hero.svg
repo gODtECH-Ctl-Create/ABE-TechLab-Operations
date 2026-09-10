@@ -1,0 +1,111 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1400" height="460" viewBox="0 0 1400 460" role="img" aria-labelledby="title desc">
+<title id="title">ABE TechLab Operations animated control-plane hero</title>
+<desc id="desc">Animated visualization of signals flowing into ARIA intelligence, through human approval, and into governed operations.</desc>
+<defs>
+  <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+    <stop offset="0" stop-color="#080a0d"/>
+    <stop offset="0.55" stop-color="#10141a"/>
+    <stop offset="1" stop-color="#0a1010"/>
+  </linearGradient>
+  <linearGradient id="lime" x1="0" x2="1"><stop stop-color="#b7ff3c"/><stop offset="1" stop-color="#e8ffb8"/></linearGradient>
+  <linearGradient id="signal" x1="0" x2="1"><stop stop-color="#60a5fa"/><stop offset="0.5" stop-color="#b7ff3c"/><stop offset="1" stop-color="#a78bfa"/></linearGradient>
+  <filter id="glow"><feGaussianBlur stdDeviation="7" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+  <pattern id="grid" width="40" height="40" patternUnits="userSpaceOnUse"><path d="M40 0H0V40" fill="none" stroke="#d7e3dc" stroke-opacity="0.055"/></pattern>
+  <clipPath id="clip"><rect width="1400" height="460" rx="28"/></clipPath>
+</defs>
+<g clip-path="url(#clip)">
+  <rect width="1400" height="460" fill="url(#bg)"/>
+  <rect width="1400" height="460" fill="url(#grid)"/>
+
+  <circle cx="680" cy="226" r="230" fill="#b7ff3c" opacity="0.025" filter="url(#glow)">
+    <animate attributeName="r" values="200;250;200" dur="7s" repeatCount="indefinite"/>
+    <animate attributeName="opacity" values="0.018;0.045;0.018" dur="7s" repeatCount="indefinite"/>
+  </circle>
+  <circle cx="1180" cy="30" r="190" fill="#2563eb" opacity="0.05" filter="url(#glow)"/>
+
+  <g transform="translate(70 50)">
+    <rect width="1260" height="360" rx="24" fill="#0d1117" fill-opacity="0.88" stroke="#ffffff" stroke-opacity="0.10"/>
+    <rect x="20" y="18" width="1220" height="34" rx="11" fill="#131820" stroke="#ffffff" stroke-opacity="0.06"/>
+    <circle cx="40" cy="35" r="4" fill="#ef4444"/>
+    <circle cx="57" cy="35" r="4" fill="#f59e0b"/>
+    <circle cx="74" cy="35" r="4" fill="#b7ff3c"><animate attributeName="opacity" values="1;.3;1" dur="1.8s" repeatCount="indefinite"/></circle>
+    <text x="100" y="40" fill="#7d8794" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="11" letter-spacing="1.2">ABE TECHLAB / OPERATIONS CONTROL PLANE</text>
+    <text x="1198" y="40" text-anchor="end" fill="#b7ff3c" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="10">GOVERNED • ACTIVE</text>
+
+    <!-- flow lines -->
+    <g fill="none" stroke-linecap="round">
+      <path d="M238 123 H440" stroke="#60a5fa" stroke-opacity="0.35" stroke-width="2"/>
+      <path d="M238 183 H440" stroke="#b7ff3c" stroke-opacity="0.35" stroke-width="2"/>
+      <path d="M238 243 H440" stroke="#a78bfa" stroke-opacity="0.35" stroke-width="2"/>
+      <path d="M660 183 H824" stroke="url(#signal)" stroke-opacity="0.55" stroke-width="2"/>
+      <path d="M1044 183 H1160 V278 H1018" stroke="#b7ff3c" stroke-opacity="0.32" stroke-width="2"/>
+      <path d="M824 278 H660" stroke="#60a5fa" stroke-opacity="0.24" stroke-width="2" stroke-dasharray="6 8"/>
+    </g>
+
+    <!-- moving packets -->
+    <g filter="url(#glow)">
+      <circle r="4" fill="#60a5fa"><animateMotion dur="2.7s" repeatCount="indefinite" path="M238 123 H440"/></circle>
+      <circle r="4" fill="#b7ff3c"><animateMotion dur="2.2s" repeatCount="indefinite" path="M238 183 H440"/></circle>
+      <circle r="4" fill="#a78bfa"><animateMotion dur="3.1s" repeatCount="indefinite" path="M238 243 H440"/></circle>
+      <circle r="4" fill="#d9ff97"><animateMotion dur="2.5s" repeatCount="indefinite" path="M660 183 H824"/></circle>
+      <circle r="4" fill="#b7ff3c"><animateMotion dur="4s" repeatCount="indefinite" path="M1044 183 H1160 V278 H1018"/></circle>
+    </g>
+
+    <!-- source cards -->
+    <g font-family="ui-monospace, SFMono-Regular, Menlo, monospace">
+      <rect x="38" y="95" width="200" height="54" rx="13" fill="#111821" stroke="#60a5fa" stroke-opacity="0.35"/>
+      <text x="58" y="117" fill="#60a5fa" font-size="9" letter-spacing="1.5">SIGNAL / 01</text>
+      <text x="58" y="137" fill="#e8edf2" font-size="13" font-weight="700">LEADS + INTAKE</text>
+
+      <rect x="38" y="156" width="200" height="54" rx="13" fill="#111821" stroke="#b7ff3c" stroke-opacity="0.35"/>
+      <text x="58" y="178" fill="#b7ff3c" font-size="9" letter-spacing="1.5">SIGNAL / 02</text>
+      <text x="58" y="198" fill="#e8edf2" font-size="13" font-weight="700">CRM + ACTIVITY</text>
+
+      <rect x="38" y="217" width="200" height="54" rx="13" fill="#111821" stroke="#a78bfa" stroke-opacity="0.35"/>
+      <text x="58" y="239" fill="#a78bfa" font-size="9" letter-spacing="1.5">SIGNAL / 03</text>
+      <text x="58" y="259" fill="#e8edf2" font-size="13" font-weight="700">RESEARCH + DATA</text>
+    </g>
+
+    <!-- ARIA core -->
+    <g transform="translate(440 83)">
+      <rect width="220" height="202" rx="22" fill="#10161a" stroke="#b7ff3c" stroke-opacity="0.42"/>
+      <circle cx="110" cy="91" r="46" fill="#b7ff3c" opacity="0.055" stroke="#b7ff3c" stroke-opacity="0.18">
+        <animate attributeName="r" values="42;53;42" dur="3s" repeatCount="indefinite"/>
+      </circle>
+      <circle cx="110" cy="91" r="27" fill="#121a16" stroke="#b7ff3c" stroke-width="2" stroke-opacity="0.85"/>
+      <path d="M95 91h30M110 76v30" stroke="#b7ff3c" stroke-width="2" stroke-linecap="round" opacity="0.85"/>
+      <circle cx="110" cy="91" r="5" fill="#dfff9c" filter="url(#glow)"><animate attributeName="opacity" values="1;.35;1" dur="1.4s" repeatCount="indefinite"/></circle>
+      <text x="110" y="147" text-anchor="middle" fill="#f3f6f4" font-family="Arial, Helvetica, sans-serif" font-size="25" font-weight="800">ARIA</text>
+      <text x="110" y="169" text-anchor="middle" fill="#8e9a91" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="10">INTELLIGENCE LAYER</text>
+      <text x="110" y="187" text-anchor="middle" fill="#b7ff3c" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="9">ADVISORY → GOVERNED ACTION</text>
+    </g>
+
+    <!-- approval -->
+    <g transform="translate(824 108)">
+      <rect width="220" height="150" rx="20" fill="#11161d" stroke="#f59e0b" stroke-opacity="0.38"/>
+      <text x="22" y="28" fill="#f59e0b" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="9" letter-spacing="1.5">HUMAN CONTROL</text>
+      <text x="22" y="62" fill="#f6f7f9" font-family="Arial, Helvetica, sans-serif" font-size="23" font-weight="800">APPROVAL</text>
+      <rect x="22" y="80" width="176" height="6" rx="3" fill="#232a31"/>
+      <rect x="22" y="80" width="128" height="6" rx="3" fill="url(#lime)"><animate attributeName="width" values="55;154;104;128;55" dur="3.8s" repeatCount="indefinite"/></rect>
+      <text x="22" y="111" fill="#8f99a4" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="10">review → approve → execute</text>
+      <circle cx="184" cy="118" r="7" fill="#b7ff3c"><animate attributeName="r" values="5;10;5" dur="1.7s" repeatCount="indefinite"/><animate attributeName="opacity" values="1;.25;1" dur="1.7s" repeatCount="indefinite"/></circle>
+    </g>
+
+    <!-- governed outputs -->
+    <g transform="translate(824 274)" font-family="ui-monospace, SFMono-Regular, Menlo, monospace">
+      <rect width="194" height="54" rx="13" fill="#111821" stroke="#b7ff3c" stroke-opacity="0.28"/>
+      <text x="18" y="22" fill="#b7ff3c" font-size="9">CONTROLLED OUTPUT</text>
+      <text x="18" y="41" fill="#e8edf2" font-size="12" font-weight="700">OUTREACH / CONTENT</text>
+    </g>
+
+    <!-- title block -->
+    <g transform="translate(38 304)">
+      <text x="0" y="0" fill="#b7ff3c" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="10" letter-spacing="2">INTERNAL OPERATING SYSTEM</text>
+      <text x="0" y="29" fill="#f5f7f6" font-family="Arial, Helvetica, sans-serif" font-size="25" font-weight="800">ABE TechLab Operations</text>
+      <text x="345" y="28" fill="#78838d" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="11">signals // intelligence // approval // execution // feedback</text>
+    </g>
+  </g>
+
+  <text x="700" y="438" text-anchor="middle" fill="#68736c" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="10" letter-spacing="3">AI PROPOSES • HUMANS GOVERN • OPERATIONS STAY AUDITABLE</text>
+</g>
+</svg>
