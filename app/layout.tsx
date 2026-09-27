@@ -25,6 +25,8 @@ import "./ui-certification.css";
 import "./invoices/invoice.css";
 import "./auth.css";
 import "./product-ui.css";
+import "./workspace-structure.css";
+import "./industry-standard.css";
 
 export const metadata: Metadata = {
   title: "ABE TechLab Operations",

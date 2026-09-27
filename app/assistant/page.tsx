@@ -1,5 +1,6 @@
 import { redirect } from "next/navigation";
 import Link from "next/link";
+import { OutreachNavigation } from "@/components/workspace-navigation";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import "./assistant.css";
 
@@ -25,6 +26,7 @@ export default async function AssistantPage(){
  const orgById=new Map(orgs.map(o=>[o.id,o.name])); const active=conversations.filter(c=>["active","waiting_client","waiting_ai"].includes(c.status)); const waiting=conversations.filter(c=>c.status==="waiting_client"); const ready=leads.filter(l=>l.status==="new"&&!conversations.some(c=>c.lead_id===l.id));
  return <main className="page-shell assistant-page">
   <header className="page-header assistant-header"><div><div className="eyebrow">Customer communication</div><h1>Client Inbox</h1><p>The workspace for AI-assisted client conversations, workflow progress, actions, and human handoff. For internal operational intelligence, use ARIA.</p></div><div className="assistant-header-actions"><Link className="ghost-button" href="/aria">Open ARIA</Link><Link className="primary-button" href="/settings/integrations/ai">AI settings →</Link></div></header>
+  <OutreachNavigation active="Client Inbox" />
   <section className="assistant-hero"><div><span className="assistant-live"><i/> Client conversation workspace</span><h2>Turn every enquiry into a guided conversation.</h2><p>Leads remain the source of truth. The Client Inbox adds persistent conversations, business workflows, structured requirements, and controlled actions around each lead.</p></div><div className="assistant-hero-state"><span>Operating mode</span><strong>Human governed</strong><small>AI can propose and prepare actions. Consequential external actions remain controlled.</small></div></section>
   <section className="lead-summary assistant-metrics"><div className="summary-card"><span>Active conversations</span><strong>{active.length}</strong></div><div className="summary-card"><span>Waiting for client</span><strong>{waiting.length}</strong></div><div className="summary-card"><span>New leads ready</span><strong>{ready.length}</strong></div><div className="summary-card"><span>Human attention</span><strong>{handoffs.length}</strong></div></section>
   <section className="assistant-grid"><div className="assistant-main-column">

@@ -51,16 +51,13 @@ export default async function AboutOperationsPage() {
       <h2>What each workspace area means</h2>
       <div className="about-table-wrap card"><table className="about-table"><thead><tr><th>Area</th><th>Purpose</th><th>Primary question</th></tr></thead><tbody>
         <tr><td>Dashboard</td><td>Operational overview.</td><td>What needs attention right now?</td></tr>
-        <tr><td>ARIA</td><td>Generate a governed brief from live Operations records.</td><td>What should we understand or prioritize?</td></tr>
-        <tr><td>Client Inbox</td><td>Manage AI-assisted customer conversations and human handoffs.</td><td>Which client conversation needs attention?</td></tr>
-        <tr><td>Research</td><td>Find and understand potential organisations.</td><td>Who should we investigate?</td></tr>
+        <tr><td>ARIA</td><td>Generate briefings, investigate markets, ask questions and prepare governed proposals.</td><td>What should we understand, research or prioritize?</td></tr>
+        <tr><td>Accounts</td><td>Maintain organisations and the people connected to them.</td><td>Who do we know and what is the relationship?</td></tr>
         <tr><td>Leads</td><td>Manage active business-development records.</td><td>Who are we working on?</td></tr>
-        <tr><td>Organisations</td><td>Maintain company/account context.</td><td>What do we know about this organisation?</td></tr>
-        <tr><td>Contacts</td><td>Maintain people linked to organisations.</td><td>Who are the relevant people?</td></tr>
         <tr><td>Opportunities</td><td>Track concrete commercial possibilities.</td><td>What business could we win?</td></tr>
-        <tr><td>Outreach</td><td>Prepare and manage communication strategies and campaigns.</td><td>What should we say and why?</td></tr>
+        <tr><td>Outreach</td><td>Prepare campaigns, manage client conversations and control follow-ups.</td><td>What should we say, who needs a response and what happens next?</td></tr>
         <tr><td>Approval Queue</td><td>Human governance checkpoint.</td><td>Is this ready to be executed?</td></tr>
-        <tr><td>Follow-ups</td><td>Track next actions and reminders.</td><td>What must happen next?</td></tr>
+        <tr><td>Finance</td><td>Prepare invoices and track the payment position.</td><td>What should be billed or collected?</td></tr>
         <tr><td>Notifications</td><td>Surface important events.</td><td>What needs my attention?</td></tr>
       </tbody></table></div>
     </section>
@@ -128,16 +125,16 @@ export default async function AboutOperationsPage() {
       <div className="eyebrow">Find your way around</div>
       <h2>Where to go when you need something</h2>
       <div className="about-table-wrap card"><table className="about-table"><thead><tr><th>I need to…</th><th>Go to…</th></tr></thead><tbody>
-        <tr><td>Find a potential organisation</td><td>Research</td></tr>
-        <tr><td>Generate an internal operations brief</td><td>ARIA</td></tr>
-        <tr><td>Review a customer conversation or handoff</td><td>Client Inbox</td></tr>
+        <tr><td>Find a potential organisation</td><td>ARIA → Research</td></tr>
+        <tr><td>Generate an internal operations brief</td><td>ARIA → Overview</td></tr>
+        <tr><td>Review a customer conversation or handoff</td><td>Outreach → Client Inbox</td></tr>
         <tr><td>Work an active prospect or enquiry</td><td>Leads</td></tr>
-        <tr><td>Understand a company account</td><td>Organisations</td></tr>
-        <tr><td>Find or manage a person</td><td>Contacts</td></tr>
+        <tr><td>Understand a company account</td><td>Accounts → Organisations</td></tr>
+        <tr><td>Find or manage a person</td><td>Accounts → Contacts</td></tr>
         <tr><td>Track a commercial deal</td><td>Opportunities</td></tr>
         <tr><td>Prepare outreach</td><td>Outreach</td></tr>
         <tr><td>Review something before execution</td><td>Approval Queue</td></tr>
-        <tr><td>See what I need to do next</td><td>Follow-ups</td></tr>
+        <tr><td>See what I need to do next</td><td>Outreach → Follow-ups</td></tr>
         <tr><td>See alerts</td><td>Notifications</td></tr>
         <tr><td>Manage my account</td><td>Profile</td></tr>
         <tr><td>Manage workspace configuration</td><td>Settings</td></tr>

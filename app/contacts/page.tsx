@@ -3,6 +3,7 @@ import Link from "next/link";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { createContact } from "./actions";
 import { RecordOverflowMenu } from "@/components/record-overflow-menu";
+import { AccountsNavigation } from "@/components/workspace-navigation";
 
 type Contact = { id: string; organisation_id: string; first_name: string; last_name: string | null; job_title: string | null; email: string | null; phone: string | null; is_decision_maker: boolean; notes: string | null; created_at: string };
 type Organisation = { id: string; name: string; industry: string | null; geography: string | null };
@@ -19,6 +20,7 @@ export default async function ContactsPage({ searchParams }: { searchParams: Pro
   const created = params.created === "1"; const trashed = params.trashed === "1"; const error = typeof params.error === "string" ? params.error : null;
   return <main className="page-shell">
     <header className="page-header"><div><div className="eyebrow">CRM · People</div><h1>Contacts</h1><p>Decision-makers and key people connected to the organisations ABE TechLab is pursuing.</p></div><div className="header-actions"><Link className="ghost-button" href="/">← Dashboard</Link><Link className="text-link" href="/trash">Trash →</Link></div></header>
+    <AccountsNavigation active="Contacts" />
     {created && <div className="success-banner"><strong>Contact created.</strong><span>The person is now linked to the selected organisation.</span></div>}
     {trashed && <div className="success-banner"><strong>Contact moved to Trash.</strong><span>The record is retained and can be restored later.</span></div>}
     {error && <div className="error-banner"><strong>Could not save contact.</strong><span>{error === "required" ? "Select an organisation and provide a contact name." : error === "duplicate_email" ? "A non-trashed contact already uses this email address." : error}</span></div>}

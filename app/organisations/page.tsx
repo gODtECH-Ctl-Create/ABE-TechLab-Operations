@@ -3,6 +3,7 @@ import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { createOrganisation } from "./actions";
 import type { Database } from "@/lib/data/supabase/database.types";
 import { RecordOverflowMenu } from "@/components/record-overflow-menu";
+import { AccountsNavigation } from "@/components/workspace-navigation";
 
 type Organisation = Database["public"]["Tables"]["organisations"]["Row"];
 type LeadSummary = Pick<Database["public"]["Tables"]["leads"]["Row"], "id" | "organisation_id" | "status" | "score">;
@@ -20,6 +21,7 @@ export default async function OrganisationsPage({ searchParams }: { searchParams
   const created = params.created === "1"; const errorMessage = typeof params.error === "string" ? params.error : null; const canEdit = ["admin", "operator"].includes(userRole);
   return <main className="page-shell">
     <header className="page-header"><div><div className="eyebrow">Customer system · {userRole}</div><h1>Organisations</h1><p>The accounts ABE TechLab knows, is researching, or is actively pursuing.</p></div><a className="ghost-button" href="/">← Dashboard</a></header>
+    <AccountsNavigation active="Organisations" />
     {created ? <div className="success-banner"><strong>Organisation created.</strong><span>The account is now available to the Operations system.</span></div> : null}
     {errorMessage ? <div className="error-banner"><strong>Could not complete the organisation action.</strong><span>{errorMessage === "name_required" ? "Organisation name is required." : errorMessage}</span></div> : null}
     <section className="organisation-layout">

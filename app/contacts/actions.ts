@@ -16,6 +16,8 @@ async function requireOperator() {
 export async function createContact(formData: FormData) {
   const { supabase, user } = await requireOperator();
   const organisationId = String(formData.get("organisation_id") ?? "").trim();
+  const requestedReturn = String(formData.get("return_to") ?? "").trim();
+  const returnTo = /^\/organisations\/[0-9a-f-]{36}$/i.test(requestedReturn) ? requestedReturn : "/contacts";
   const name = String(formData.get("name") ?? "").trim();
   if (!organisationId || !name) redirect("/contacts?error=required");
 
@@ -55,7 +57,39 @@ export async function createContact(formData: FormData) {
 
   revalidatePath("/contacts");
   revalidatePath(`/organisations/${organisationId}`);
-  redirect("/contacts?created=1");
+  redirect(`${returnTo}?${returnTo === "/contacts" ? "created" : "contact_created"}=1`);
+}
+
+export async function updateContact(formData: FormData) {
+  const { supabase, user } = await requireOperator();
+  const id = String(formData.get("id") ?? "").trim();
+  const organisationId = String(formData.get("organisation_id") ?? "").trim();
+  const name = String(formData.get("name") ?? "").trim();
+  if (!id || !organisationId || !name) redirect(`/contacts/${id || "unknown"}?error=required`);
+
+  const email = String(formData.get("email") ?? "").trim().toLowerCase() || null;
+  if (email) {
+    const { data: duplicate } = await (supabase.from("contacts") as any).select("id").eq("email", email).neq("id", id).is("deleted_at", null).maybeSingle();
+    if (duplicate) redirect(`/contacts/${id}?error=duplicate_email`);
+  }
+
+  const payload = {
+    organisation_id: organisationId,
+    first_name: name.split(/\s+/)[0],
+    last_name: name.split(/\s+/).slice(1).join(" ") || null,
+    job_title: String(formData.get("role_title") ?? "").trim() || null,
+    email,
+    phone: String(formData.get("phone") ?? "").trim() || null,
+    is_decision_maker: formData.get("is_decision_maker") === "on",
+    notes: String(formData.get("notes") ?? "").trim() || null,
+  };
+  const { error } = await (supabase.from("contacts") as any).update(payload).eq("id", id).is("deleted_at", null);
+  if (error) redirect(`/contacts/${id}?error=${encodeURIComponent(error.message)}`);
+  await (supabase.from("audit_events") as any).insert({ actor_type: "human", actor_id: user.id, action: "contact.updated", entity_type: "contact", entity_id: id, metadata: { organisation_id: organisationId } });
+  revalidatePath("/contacts");
+  revalidatePath(`/contacts/${id}`);
+  revalidatePath(`/organisations/${organisationId}`);
+  redirect(`/contacts/${id}?updated=1`);
 }
 
 export async function trashContact(formData: FormData) {

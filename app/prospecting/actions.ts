@@ -20,7 +20,7 @@ async function requireOperator() {
   if (!user) redirect("/login");
   const roleResult = await supabase.rpc("get_my_role" as never);
   const role = roleResult.error ? null : (roleResult.data as Role | null);
-  if (!role || !["admin", "operator"].includes(role)) redirect("/prospecting?error=unauthorized");
+  if (!role || !["admin", "operator"].includes(role)) redirect("/aria/research?error=unauthorized");
   return { supabase, user, role };
 }
 
@@ -30,12 +30,12 @@ export async function createResearchRequest(formData: FormData) {
   const query = String(formData.get("query") ?? "").trim();
   const geography = String(formData.get("geography") ?? "").trim() || null;
   const industries = String(formData.get("industries") ?? "").split(",").map((item) => item.trim()).filter(Boolean);
-  if (!query) redirect("/prospecting?error=query_required");
+  if (!query) redirect("/aria/research?error=query_required");
 
   const requestPayload: ResearchRequestInsert = { query, geography, industries, status: "queued", provider: "aria" };
   const { data: request, error } = await supabase.from("research_requests").insert(requestPayload as never).select("id").single();
   const requestId = (request as { id: string } | null)?.id;
-  if (error || !requestId) redirect(`/prospecting?error=${encodeURIComponent(error?.message ?? "request_failed")}`);
+  if (error || !requestId) redirect(`/aria/research?error=${encodeURIComponent(error?.message ?? "request_failed")}`);
 
   const auditPayload: AuditEventInsert = {
     actor_type: "human",
@@ -48,17 +48,17 @@ export async function createResearchRequest(formData: FormData) {
   await supabase.from("audit_events").insert(auditPayload as never);
 
   if (!AI_RESEARCH_ENABLED) {
-    revalidatePath("/prospecting");
+    revalidatePath("/aria/research");
     revalidatePath("/ai");
     revalidatePath("/");
-    redirect(`/prospecting?created=${requestId}&queued=1`);
+    redirect(`/aria/research?created=${requestId}&queued=1`);
   }
 
   const { data: sessionData } = await supabase.auth.getSession();
   const accessToken = sessionData.session?.access_token;
   if (!accessToken || !SUPABASE_URL) {
     await supabase.from("research_requests").update({ status: "failed", error_message: "Research worker configuration is unavailable." } as never).eq("id", requestId);
-    redirect("/prospecting?error=worker_configuration");
+    redirect("/aria/research?error=worker_configuration");
   }
 
   let workerFailure: string | null = null;
@@ -79,23 +79,23 @@ export async function createResearchRequest(formData: FormData) {
 
   if (workerFailure) {
     await supabase.from("research_requests").update({ status: "failed", error_message: workerFailure } as never).eq("id", requestId);
-    redirect(`/prospecting?error=${encodeURIComponent("research_worker_failed")}`);
+    redirect(`/aria/research?error=${encodeURIComponent("research_worker_failed")}`);
   }
 
-  revalidatePath("/prospecting");
+  revalidatePath("/aria/research");
   revalidatePath("/ai");
   revalidatePath("/");
-  redirect(`/prospecting?created=${requestId}`);
+  redirect(`/aria/research?created=${requestId}`);
 }
 
 export async function convertProspectToLead(formData: FormData) {
   const { supabase, user } = await requireOperator();
   const prospectId = String(formData.get("prospect_id") ?? "").trim();
-  if (!prospectId) redirect("/prospecting?error=prospect_required");
+  if (!prospectId) redirect("/aria/research?error=prospect_required");
 
   const { data: prospectData } = await supabase.from("prospects").select("id, organisation_id, status, likely_need, recommended_service, score").eq("id", prospectId).maybeSingle();
   const prospect = prospectData as ProspectCandidate | null;
-  if (!prospect) redirect("/prospecting?error=prospect_not_found");
+  if (!prospect) redirect("/aria/research?error=prospect_not_found");
 
   const { data: existingLead } = await supabase.from("leads").select("id").eq("prospect_id", prospectId).maybeSingle();
   const existing = existingLead as { id: string } | null;
@@ -112,7 +112,7 @@ export async function convertProspectToLead(formData: FormData) {
   };
 
   const { data: lead, error } = await supabase.from("leads").insert(leadPayload as never).select("id").single();
-  if (error || !lead) redirect(`/prospecting/${prospectId}?error=${encodeURIComponent(error?.message ?? "lead_create_failed")}`);
+  if (error || !lead) redirect(`/aria/research/${prospectId}?error=${encodeURIComponent(error?.message ?? "lead_create_failed")}`);
 
   const createdLead = lead as { id: string };
   await supabase.from("prospects").update({ status: "converted" } as never).eq("id", prospectId);
@@ -125,8 +125,8 @@ export async function convertProspectToLead(formData: FormData) {
     metadata: { lead_id: createdLead.id, source: "prospect_research" },
   } as never);
 
-  revalidatePath("/prospecting");
-  revalidatePath(`/prospecting/${prospectId}`);
+  revalidatePath("/aria/research");
+  revalidatePath(`/aria/research/${prospectId}`);
   revalidatePath("/leads");
   revalidatePath(`/leads/${createdLead.id}`);
   revalidatePath("/");

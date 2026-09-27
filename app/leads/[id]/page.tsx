@@ -4,6 +4,7 @@ import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { updateLead } from "./actions";
 import { RecordActions } from "@/components/record-actions";
 import type { Database } from "@/lib/data/supabase/database.types";
+import { PipelineNavigation } from "@/components/workspace-navigation";
 
 type Lead = Database["public"]["Tables"]["leads"]["Row"];
 type Organisation = Database["public"]["Tables"]["organisations"]["Row"];
@@ -39,6 +40,7 @@ export default async function LeadDetailPage({ params, searchParams }: Props) {
   const error = typeof query.error === "string" ? query.error : null; const updated = query.updated === "1";
   return <main className="page-shell">
     <header className="page-header"><div><div className="eyebrow">CRM · Lead detail</div><h1>{organisation?.name ?? "Lead"}</h1><p>{lead.service_interest ?? "Service interest not identified yet"} · {statusLabels[lead.status] ?? lead.status}</p></div><div className="header-actions"><Link className="ghost-button" href="/leads">← Back to leads</Link><RecordActions entity="lead" id={lead.id} editHref="#lead-edit" /></div></header>
+    <PipelineNavigation active="Leads" />
     {updated && <div className="success-banner"><strong>Lead updated.</strong><span>The latest changes are now recorded in the live pipeline.</span></div>}
     {error && <div className="error-banner"><strong>Could not update lead.</strong><span>{errorLabel(error)}</span></div>}
     <section className="lead-summary"><div className="summary-card"><span>Status</span><strong>{statusLabels[lead.status] ?? lead.status}</strong></div><div className="summary-card"><span>Fit score</span><strong>{lead.score ?? "--"}</strong></div><div className="summary-card"><span>Owner</span><strong>{lead.owner_id ? profileById.get(lead.owner_id)?.display_name || "Assigned" : "Unassigned"}</strong></div><div className="summary-card"><span>Next action</span><strong>{lead.next_action ?? "Not set"}</strong></div></section>
